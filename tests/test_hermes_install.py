@@ -43,8 +43,10 @@ class HermesInstall(unittest.TestCase):
         self.assertEqual(w["rate_history_found_by"], "search")
 
     def install(self, skills, **extra):
+        # the installer must use this Python (it has openpyxl); python3 on PATH may be a Hermes venv without it
+        env = {**self.env, "MAHAREKA_PYTHON": Path(sys.executable).as_posix(), **extra}
         return subprocess.run(["bash", (ROOT / "tools" / "install-hermes.sh").as_posix(), skills.as_posix()],
-                              capture_output=True, text=True, encoding="utf-8", env={**self.env, **extra})
+                              capture_output=True, text=True, encoding="utf-8", env=env)
 
     def agent_layout(self):
         """A Hermes profile: old bq skill and the QS agent (with the live ratebase) in skills/mahareka/."""
