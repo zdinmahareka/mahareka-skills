@@ -10,7 +10,7 @@ description: Builds new Claude skills for Mahareka to the house standard, and au
 ## Architecture — read this first
 
 This skill is the **instruction layer** plus, since v2.0, the **ICM method**. It ships no Mahareka data.
-Every Mahareka engine, template and the registry live in the **KNOWLEDGE folder** already on each Hermes machine (`$MAHAREKA_KNOWLEDGE`, else `~/mahareka-knowledge`, else the folder under home that holds `sb_boot.py`: `find ~ -maxdepth 6 -name sb_boot.py -not -path "*/mc-backups/*"`; never copy or move it) — the layer Zaim replaces himself. Hermes agents only; use `py` where that is the Python command.
+Every Mahareka engine, template and the registry live in the **KNOWLEDGE folder** already on each Hermes machine (`$MAHAREKA_KNOWLEDGE`, else `~/mahareka-knowledge`; never an archive or download copy; never copy or move it) — the layer Zaim replaces himself. Hermes agents only; use `py` where that is the Python command.
 
 ```
 SKILL (this folder)   instructions · frozen · changes only on a version bump

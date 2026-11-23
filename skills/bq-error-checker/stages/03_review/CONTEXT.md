@@ -5,7 +5,10 @@ the scripts cannot do. A false accusation against a subcon costs more than a mis
 
 ## Inputs
 - Working (this run): `RUN/01_intake/intake.md`
-- Working (this run): `RUN/02_checks/findings.json`, `RUN/02_checks/rates.json` (if present)
+- Working (this run): `RUN/02_checks/findings.json`, `RUN/02_checks/rates.json` (if present),
+  `RUN/02_checks/boot.txt`
+- Reference (any comparison figure): `KNOWLEDGE/ratebase.py`, `KNOWLEDGE/bif_prorata.py`,
+  `KNOWLEDGE/bur_calc.py` (owned by `mahareka-qs-agent`; run with PY from KNOWLEDGE)
 - Working (this run): any drawing or subcon quote in `RUN/00_input/` (Layer E only)
 - Reference (every run): `SKILL/_shared/taxonomy.md`
 - Reference (every run): `SKILL/_shared/conventions.md`
@@ -17,7 +20,8 @@ Do NOT load: `_shared/reporting.md` (stage 04), the whole BQ again (use the line
 `findings.json`), other runs.
 
 ## Process
-1. Read lessons and conflicts **before** interpreting any flag.
+1. Read lessons and conflicts **before** interpreting any flag. If `boot.txt` is FLAGGED, list
+   each flag as an `ASK` row before trusting any number.
 2. For each finding id in `findings.json` and `rates.json`, write one table row in
    `review.md`: id, line, what it is, decision, reason. Decision is one of:
    - `KEEP` (real, goes in the report), `DOWNGRADE` (real, minor or advisory),
@@ -32,7 +36,10 @@ Do NOT load: `_shared/reporting.md` (stage 04), the whole BQ again (use the line
    Layer D margin (only with cost data), Layer E cross-reference (only with a drawing or
    quote), and in Mode 2 Layer G (cost drivers, scope gaps, quantity plausibility, VE,
    budget target, comparison).
-6. Any `ASK` → list the questions under `## Questions for Zaim` (one round).
+6. **Ask, don't guess.** Never price-check blind, never invent an assumption silently, never
+   invent a benchmark. Every comparison figure comes from the engines above, never hand-
+   calculated. An absent rate is flagged as a **ratebase gap**, with an offer to stage it.
+7. Any `ASK` → list the questions under `## Questions for Zaim` (one round).
 
 ## Outputs
 - `review.md` → `RUN/03_review/` (copied from the stamp; one row per id)
