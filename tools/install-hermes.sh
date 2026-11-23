@@ -33,6 +33,8 @@ fi
 PY="$("$PY" -c "import sys; print(sys.executable)")"
 echo "[install] python: $PY"
 
+# tests that run this installer must use this same bash (on Windows: Git Bash, not WSL's)
+if command -v cygpath >/dev/null 2>&1; then export MAHAREKA_BASH="$(cygpath -w "$BASH")"; else export MAHAREKA_BASH="$BASH"; fi
 LOG="$(mktemp)"; trap 'rm -f "$LOG"' EXIT
 ( cd "$REPO" && "$PY" -m unittest discover -s tests >"$LOG" 2>&1 ) \
   || { echo "[install] STOP: tests failed"; tail -20 "$LOG"; exit 1; }
