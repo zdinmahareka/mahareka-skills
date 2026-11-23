@@ -17,4 +17,4 @@ Do NOT load: <the shelves and earlier outputs this stage must not see>, other ru
 - `<file>` → `RUN/NN_<verb>/`
 
 ## Check
-<Exactly one: "Zaim reads …" or "`python3 SKILL/_tools/gate.py RUN NN` — passes when …".>
+<Exactly one: "Zaim reads …" or "`PY SKILL/_tools/gate.py RUN NN` — passes when …".>

@@ -11,12 +11,25 @@ SKILLS="${1:?usage: install-hermes.sh <hermes skills dir> [skill ...]}"; shift |
 [ -d "$SKILLS" ] || { echo "[install] no such skills folder: $SKILLS"; exit 1; }
 NAMES=("$@"); [ ${#NAMES[@]} -gt 0 ] || NAMES=(bq-error-checker mahareka-skill-builder)
 
+# The Python the skills run with (needs openpyxl): MAHAREKA_PYTHON, else the first of
+# python3 / py / python that has openpyxl. Recorded in ~/.mahareka/python for where.py.
+ok() { "$1" -c "import sys, openpyxl; sys.exit(sys.version_info < (3, 9))" >/dev/null 2>&1; }
 PY=""
-for c in python3 py python; do
-  if command -v "$c" >/dev/null 2>&1 && "$c" -c "import sys; sys.exit(sys.version_info < (3, 9))" 2>/dev/null; then PY="$c"; break; fi
-done
-[ -n "$PY" ] || { echo "[install] STOP: no Python 3.9+ found (python3 / py / python)"; exit 1; }
-"$PY" -c "import openpyxl" 2>/dev/null || { echo "[install] STOP: $PY has no openpyxl. Install it with: $PY -m pip install openpyxl"; exit 1; }
+if [ -n "${MAHAREKA_PYTHON:-}" ]; then
+  ok "$MAHAREKA_PYTHON" || { echo "[install] STOP: MAHAREKA_PYTHON=$MAHAREKA_PYTHON is not Python 3.9+ with openpyxl"; exit 1; }
+  PY="$MAHAREKA_PYTHON"
+else
+  for c in python3 py python; do
+    if command -v "$c" >/dev/null 2>&1 && ok "$c"; then PY="$c"; break; fi
+  done
+fi
+if [ -z "$PY" ]; then
+  echo "[install] STOP: no Python 3.9+ with openpyxl (tried python3, py, python)."
+  echo "[install] Either point at one that has it: MAHAREKA_PYTHON=/path/to/python bash $0 $SKILLS"
+  echo "[install] or install it into a non-Hermes Python: <python> -m pip install openpyxl"
+  exit 1
+fi
+PY="$(command -v "$PY" 2>/dev/null || echo "$PY")"
 echo "[install] python: $PY"
 
 LOG="$(mktemp)"
@@ -24,6 +37,8 @@ LOG="$(mktemp)"
   || { echo "[install] STOP: tests failed"; tail -20 "$LOG"; exit 1; }
 echo "[install] tests: $(grep -oE 'Ran [0-9]+ tests' "$LOG") OK"
 find "$REPO" -name __pycache__ -prune -exec rm -rf {} +
+
+mkdir -p "$HOME/.mahareka" && printf '%s\n' "$PY" > "$HOME/.mahareka/python"
 
 STAMP="$(date +%Y%m%d-%H%M%S)"; BK="$HOME/mc-backups/skills"; mkdir -p "$BK"
 for n in "${NAMES[@]}"; do

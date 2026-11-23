@@ -39,14 +39,28 @@ class HermesInstall(unittest.TestCase):
         self.assertEqual(w["rate_history"], str(self.home / "Documents" / "QS" / "Rate_History_v3.xlsx"))
         self.assertEqual(w["rate_history_found_by"], "search")
 
-    @unittest.skipIf(os.environ.get("MAHAREKA_SKIP_TESTS"), "already inside an install run")
-    def test_install_replaces_in_place_and_backs_up(self):
-        skills = self.home / ".hermes" / "skills"
-        old = skills / "construction" / "bq-error-checker"; old.mkdir(parents=True)
+    def install(self, skills, **extra):
+        return subprocess.run(["bash", str(ROOT / "tools" / "install-hermes.sh"), str(skills)],
+                              capture_output=True, text=True, env={**self.env, **extra})
+
+    def agent_layout(self):
+        """A Hermes profile: old bq skill and the QS agent (with the live ratebase) in skills/mahareka/."""
+        skills = self.home / ".hermes" / "profiles" / "agent" / "skills"
+        old = skills / "mahareka" / "bq-error-checker"; old.mkdir(parents=True)
         (old / "SKILL.md").write_text("---\nname: bq-error-checker\ndescription: old\n---\nv1\n")
         (old / "references").mkdir(); (old / "references" / "x.md").write_text("old")
-        p = subprocess.run(["bash", str(ROOT / "tools" / "install-hermes.sh"), str(skills)],
-                           capture_output=True, text=True, env=self.env)
+        qs = skills / "mahareka" / "mahareka-qs-agent" / "scripts"; qs.mkdir(parents=True)
+        (qs.parent / "SKILL.md").write_text("---\nname: mahareka-qs-agent\ndescription: qs\n---\n")
+        (qs / "qs_boot.py").write_text("print('QS BOOT: INTACT')\n")
+        (qs / "QS_RATEBASE_test_a.xlsx").write_bytes(b"x")
+        out = self.home / ".hermes" / "qs_outputs"; out.mkdir(parents=True)
+        (out / "QS_RATEBASE_test_b.xlsx").write_bytes(b"x")
+        return skills, old, qs
+
+    @unittest.skipIf(os.environ.get("MAHAREKA_SKIP_TESTS"), "already inside an install run")
+    def test_install_replaces_in_place_and_backs_up(self):
+        skills, old, qs = self.agent_layout()
+        p = self.install(skills)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn("version **2.0**", (old / "SKILL.md").read_text())
         self.assertFalse((old / "references").exists(), "old files must not linger")
@@ -54,7 +68,28 @@ class HermesInstall(unittest.TestCase):
         backups = list((self.home / "mc-backups" / "skills").glob("bq-error-checker-*"))
         self.assertEqual(len(backups), 1); self.assertTrue((backups[0] / "references" / "x.md").is_file())
         self.assertEqual(len(list(skills.rglob("bq-error-checker/SKILL.md"))), 1)
+        self.assertTrue((qs / "qs_boot.py").is_file(), "the QS agent is never touched")
         self.assertIn("[install] done", p.stdout)
+        # the installed copy finds the QS agent's ratebase folder and the recorded Python
+        recorded = (self.home / ".mahareka" / "python").read_text().strip()
+        w = json.loads(subprocess.run([sys.executable, "-I", str(old / "_tools" / "where.py"), "--json"],
+                                      capture_output=True, text=True, env=self.env).stdout)
+        self.assertEqual(w["knowledge"], str(qs)); self.assertEqual(w["knowledge_found_by"], "skill mahareka-qs-agent")
+        self.assertEqual(w["python"], recorded); self.assertEqual(w["python_found_by"], "recorded by install")
+        self.assertIsNone(w["rate_history"])
+
+    def test_install_stops_on_a_python_without_openpyxl(self):
+        skills, old, _ = self.agent_layout()
+        fake = self.home / "nopy"; fake.write_text("#!/bin/sh\nexit 1\n"); fake.chmod(0o755)
+        p = self.install(skills, MAHAREKA_PYTHON=str(fake))
+        self.assertEqual(p.returncode, 1)
+        self.assertIn("STOP: MAHAREKA_PYTHON", p.stdout)
+        self.assertTrue((old / "references" / "x.md").is_file(), "nothing moved on STOP")
+        self.assertFalse((self.home / ".mahareka" / "python").exists())
+
+    def test_where_python_override(self):
+        self.assertEqual(self.where(MAHAREKA_PYTHON="/opt/py/bin/python")["python_found_by"], "env")
+        self.assertEqual(self.where()["python_found_by"], "this python")
 
 if __name__ == "__main__":
     unittest.main()
