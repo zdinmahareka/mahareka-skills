@@ -14,7 +14,7 @@ Memory layouts (v2.0 reads both, writes to the one it finds):
            Reads RATES and INBOX; appends ONLY to INBOX; formulas are preserved.
   legacy   (v1.x): sheet RATES with ITEM_KEY | DESCRIPTION | UOM | GRADE_SPEC | BASIS | RATE | ...
 """
-import json, argparse, re, statistics, datetime
+import sys, json, argparse, re, statistics, datetime
 from difflib import SequenceMatcher
 from openpyxl import load_workbook, Workbook
 
@@ -84,6 +84,7 @@ def append_rows(wb, layout, entries, basis, project, subcon, today):
             ws.append([normkey(desc), desc[:120], uom, "", basis, rate, project, subcon, today, status, note])
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     ap = argparse.ArgumentParser()
     ap.add_argument("--lines", required=True); ap.add_argument("--history", required=True)
     ap.add_argument("--project", required=True); ap.add_argument("--subcon", default="")
@@ -94,7 +95,7 @@ def main():
     ap.add_argument("--json", help="write matches, flags (ids R01..) and shift for stage 03")
     a = ap.parse_args()
 
-    lines = json.load(open(a.lines))["lines"]
+    lines = json.load(open(a.lines, encoding="utf-8"))["lines"]
     hist, wb, layout = load_history(a.history)
     today = datetime.date.today().isoformat()
     flags, matches, news, devs = [], [], [], []
@@ -177,7 +178,7 @@ def main():
               f"({f['dev_pct']:+}%, n={f['history_n']}{', DERIVED cost x' + str(a.markup) if f.get('derived') else ''}) RM impact ~{f['rm_impact']:,.2f}")
     print(f"\nUpdated memory: {a.out} (new/flagged rows = STATUS pending/flagged, awaiting Zaim verification)")
     if a.json:
-        with open(a.json, "w") as fh:
+        with open(a.json, "w", encoding="utf-8") as fh:
             json.dump({"layout": layout, "matched": len(matches), "new": len(news), "flags": flags,
                        "shift": shift, "memory_out": a.out}, fh, indent=1, default=str)
 

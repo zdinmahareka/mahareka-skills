@@ -1,12 +1,14 @@
 """icm_check.py: every skill in the repo passes; a broken pipeline is caught."""
-import shutil, subprocess, sys, tempfile, unittest
+import os, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
+
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECK = ROOT / "skills" / "mahareka-skill-builder" / "scripts" / "icm_check.py"
 
 def check(*args):
-    return subprocess.run([sys.executable, "-I", str(CHECK), *map(str, args)], capture_output=True, text=True)
+    return subprocess.run([sys.executable, "-P", str(CHECK), *map(str, args)], capture_output=True, text=True, encoding="utf-8")
 
 class IcmCheck(unittest.TestCase):
     def test_repo_skills_pass(self):
@@ -18,9 +20,9 @@ class IcmCheck(unittest.TestCase):
     def test_broken_pipeline_fails(self):
         tmp = Path(tempfile.mkdtemp()) / "bq-error-checker"
         shutil.copytree(ROOT / "skills" / "bq-error-checker", tmp)
-        (tmp / "_templates" / "SKILL.md").write_text("---\nname: x\ndescription: y\n---\n")
+        (tmp / "_templates" / "SKILL.md").write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")
         c = tmp / "stages" / "03_review" / "CONTEXT.md"
-        c.write_text(c.read_text().replace("## Check", "## Verify"))
+        c.write_text(c.read_text(encoding="utf-8").replace("## Check", "## Verify"))
         (tmp / "stages" / "04_report").rename(tmp / "stages" / "05_report")
         p = check(tmp)
         self.assertEqual(p.returncode, 1)

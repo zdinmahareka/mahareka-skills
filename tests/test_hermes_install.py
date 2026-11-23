@@ -2,6 +2,8 @@
 import json, os, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
+
 ROOT = Path(__file__).resolve().parents[1]
 WHERE = ROOT / "skills" / "bq-error-checker" / "_tools" / "where.py"
 
@@ -9,10 +11,11 @@ class HermesInstall(unittest.TestCase):
     def setUp(self):
         self.home = Path(tempfile.mkdtemp())
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("MAHAREKA_")}
-        self.env.update(HOME=str(self.home), USERPROFILE=str(self.home), MAHAREKA_SKIP_TESTS="1")
+        # bash gets forward slashes (Git Bash on Windows drops backslashes); Python reads USERPROFILE there
+        self.env.update(HOME=self.home.as_posix(), USERPROFILE=str(self.home), MAHAREKA_SKIP_TESTS="1")
 
     def where(self, **extra):
-        p = subprocess.run([sys.executable, "-I", str(WHERE), "--json"], capture_output=True, text=True,
+        p = subprocess.run([sys.executable, "-P", str(WHERE), "--json"], capture_output=True, text=True, encoding="utf-8",
                            env={**self.env, **extra})
         return json.loads(p.stdout)
 
@@ -22,7 +25,7 @@ class HermesInstall(unittest.TestCase):
         self.assertEqual(w["runs"], str(self.home / "mahareka-runs"))
         self.assertIsNone(w["qs_boot"]); self.assertIsNone(w["rate_history"])
         k = self.home / "kb"; k.mkdir()
-        (k / "qs_boot.py").write_text("print('INTACT')\n")
+        (k / "qs_boot.py").write_text("print('INTACT')\n", encoding="utf-8")
         (k / "Rate_History.xlsx").write_bytes(b"x")
         w = self.where(MAHAREKA_KNOWLEDGE=str(k))
         self.assertEqual(w["knowledge_found_by"], "env")
@@ -31,27 +34,27 @@ class HermesInstall(unittest.TestCase):
 
     def test_where_finds_files_already_on_the_machine(self):
         deep = self.home / "Documents" / "QS" / "ratebase"; deep.mkdir(parents=True)
-        (deep / "qs_boot.py").write_text("print('INTACT')\n")
+        (deep / "qs_boot.py").write_text("print('INTACT')\n", encoding="utf-8")
         (self.home / "Documents" / "QS" / "Rate_History_v3.xlsx").write_bytes(b"x")
-        bk = self.home / "mc-backups" / "old"; bk.mkdir(parents=True); (bk / "qs_boot.py").write_text("")
+        bk = self.home / "mc-backups" / "old"; bk.mkdir(parents=True); (bk / "qs_boot.py").write_text("", encoding="utf-8")
         w = self.where()
         self.assertEqual(w["knowledge"], str(deep)); self.assertEqual(w["knowledge_found_by"], "search")
         self.assertEqual(w["rate_history"], str(self.home / "Documents" / "QS" / "Rate_History_v3.xlsx"))
         self.assertEqual(w["rate_history_found_by"], "search")
 
     def install(self, skills, **extra):
-        return subprocess.run(["bash", str(ROOT / "tools" / "install-hermes.sh"), str(skills)],
-                              capture_output=True, text=True, env={**self.env, **extra})
+        return subprocess.run(["bash", (ROOT / "tools" / "install-hermes.sh").as_posix(), skills.as_posix()],
+                              capture_output=True, text=True, encoding="utf-8", env={**self.env, **extra})
 
     def agent_layout(self):
         """A Hermes profile: old bq skill and the QS agent (with the live ratebase) in skills/mahareka/."""
         skills = self.home / ".hermes" / "profiles" / "agent" / "skills"
         old = skills / "mahareka" / "bq-error-checker"; old.mkdir(parents=True)
-        (old / "SKILL.md").write_text("---\nname: bq-error-checker\ndescription: old\n---\nv1\n")
-        (old / "references").mkdir(); (old / "references" / "x.md").write_text("old")
+        (old / "SKILL.md").write_text("---\nname: bq-error-checker\ndescription: old\n---\nv1\n", encoding="utf-8")
+        (old / "references").mkdir(); (old / "references" / "x.md").write_text("old", encoding="utf-8")
         qs = skills / "mahareka" / "mahareka-qs-agent" / "scripts"; qs.mkdir(parents=True)
-        (qs.parent / "SKILL.md").write_text("---\nname: mahareka-qs-agent\ndescription: qs\n---\n")
-        (qs / "qs_boot.py").write_text("print('QS BOOT: INTACT')\n")
+        (qs.parent / "SKILL.md").write_text("---\nname: mahareka-qs-agent\ndescription: qs\n---\n", encoding="utf-8")
+        (qs / "qs_boot.py").write_text("print('QS BOOT: INTACT')\n", encoding="utf-8")
         (qs / "QS_RATEBASE_test_a.xlsx").write_bytes(b"x")
         out = self.home / ".hermes" / "qs_outputs"; out.mkdir(parents=True)
         (out / "QS_RATEBASE_test_b.xlsx").write_bytes(b"x")
@@ -62,7 +65,7 @@ class HermesInstall(unittest.TestCase):
         skills, old, qs = self.agent_layout()
         p = self.install(skills)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertIn("version **2.0**", (old / "SKILL.md").read_text())
+        self.assertIn("version **2.0**", (old / "SKILL.md").read_text(encoding="utf-8"))
         self.assertFalse((old / "references").exists(), "old files must not linger")
         self.assertTrue((skills / "mahareka" / "mahareka-skill-builder" / "SKILL.md").is_file())
         backups = list((self.home / "mc-backups" / "skills").glob("bq-error-checker-*"))
@@ -71,17 +74,17 @@ class HermesInstall(unittest.TestCase):
         self.assertTrue((qs / "qs_boot.py").is_file(), "the QS agent is never touched")
         self.assertIn("[install] done", p.stdout)
         # the installed copy finds the QS agent's ratebase folder and the recorded Python
-        recorded = (self.home / ".mahareka" / "python").read_text().strip()
-        w = json.loads(subprocess.run([sys.executable, "-I", str(old / "_tools" / "where.py"), "--json"],
-                                      capture_output=True, text=True, env=self.env).stdout)
+        recorded = (self.home / ".mahareka" / "python").read_text(encoding="utf-8").strip()
+        w = json.loads(subprocess.run([sys.executable, "-P", str(old / "_tools" / "where.py"), "--json"],
+                                      capture_output=True, text=True, encoding="utf-8", env=self.env).stdout)
         self.assertEqual(w["knowledge"], str(qs)); self.assertEqual(w["knowledge_found_by"], "skill mahareka-qs-agent")
         self.assertEqual(w["python"], recorded); self.assertEqual(w["python_found_by"], "recorded by install")
         self.assertIsNone(w["rate_history"])
 
     def test_install_stops_on_a_python_without_openpyxl(self):
         skills, old, _ = self.agent_layout()
-        fake = self.home / "nopy"; fake.write_text("#!/bin/sh\nexit 1\n"); fake.chmod(0o755)
-        p = self.install(skills, MAHAREKA_PYTHON=str(fake))
+        fake = self.home / "nopy"; fake.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8"); fake.chmod(0o755)
+        p = self.install(skills, MAHAREKA_PYTHON=fake.as_posix())
         self.assertEqual(p.returncode, 1)
         self.assertIn("STOP: MAHAREKA_PYTHON", p.stdout)
         self.assertTrue((old / "references" / "x.md").is_file(), "nothing moved on STOP")

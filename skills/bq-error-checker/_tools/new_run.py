@@ -12,12 +12,13 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parent.parent
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     ap = argparse.ArgumentParser()
     ap.add_argument("--project", required=True); ap.add_argument("--input", action="append", default=[])
     ap.add_argument("--root")
     a = ap.parse_args()
     tpl = SKILL / "_templates" / "run"
-    m = re.search(r"^runs_dir:\s*(\S+)", (tpl / "RUN.md").read_text(), re.M)
+    m = re.search(r"^runs_dir:\s*(\S+)", (tpl / "RUN.md").read_text(encoding="utf-8"), re.M)
     runs_dir = m.group(1) if m else SKILL.name + "-runs"
     root = Path(a.root or os.environ.get("MAHAREKA_RUNS") or Path.home() / "mahareka-runs").expanduser()
     date = datetime.date.today().isoformat()
@@ -38,9 +39,9 @@ def main():
     for src in tpl.rglob("*"):
         if src.is_dir(): continue
         dst = run / src.relative_to(tpl); dst.parent.mkdir(parents=True, exist_ok=True)
-        text = src.read_text()
+        text = src.read_text(encoding="utf-8")
         for k, v in subs.items(): text = text.replace(k, v)
-        dst.write_text(text)
+        dst.write_text(text, encoding="utf-8")
     print(run)
 
 if __name__ == "__main__":

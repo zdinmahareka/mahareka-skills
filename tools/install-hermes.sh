@@ -13,10 +13,10 @@ NAMES=("$@"); [ ${#NAMES[@]} -gt 0 ] || NAMES=(bq-error-checker mahareka-skill-b
 
 # The Python the skills run with (needs openpyxl): MAHAREKA_PYTHON, else the first of
 # python3 / py / python that has openpyxl. Recorded in ~/.mahareka/python for where.py.
-ok() { "$1" -c "import sys, openpyxl; sys.exit(sys.version_info < (3, 9))" >/dev/null 2>&1; }
+ok() { "$1" -c "import sys, openpyxl; sys.exit(sys.version_info < (3, 11))" >/dev/null 2>&1; }
 PY=""
 if [ -n "${MAHAREKA_PYTHON:-}" ]; then
-  ok "$MAHAREKA_PYTHON" || { echo "[install] STOP: MAHAREKA_PYTHON=$MAHAREKA_PYTHON is not Python 3.9+ with openpyxl"; exit 1; }
+  ok "$MAHAREKA_PYTHON" || { echo "[install] STOP: MAHAREKA_PYTHON=$MAHAREKA_PYTHON is not Python 3.11+ with openpyxl"; exit 1; }
   PY="$MAHAREKA_PYTHON"
 else
   for c in python3 py python; do
@@ -24,12 +24,13 @@ else
   done
 fi
 if [ -z "$PY" ]; then
-  echo "[install] STOP: no Python 3.9+ with openpyxl (tried python3, py, python)."
+  echo "[install] STOP: no Python 3.11+ with openpyxl (tried python3, py, python)."
   echo "[install] Either point at one that has it: MAHAREKA_PYTHON=/path/to/python bash $0 $SKILLS"
   echo "[install] or install it into a non-Hermes Python: <python> -m pip install openpyxl"
   exit 1
 fi
-PY="$(command -v "$PY" 2>/dev/null || echo "$PY")"
+# record the real interpreter (on Windows a native C:\\... path, which Git Bash and Hermes both run)
+PY="$("$PY" -c "import sys; print(sys.executable)")"
 echo "[install] python: $PY"
 
 LOG="$(mktemp)"

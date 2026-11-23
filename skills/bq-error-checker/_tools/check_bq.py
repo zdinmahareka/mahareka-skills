@@ -202,6 +202,7 @@ def check(path, sheet=None):
     return info, findings, lines
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     ap = argparse.ArgumentParser()
     ap.add_argument("file"); ap.add_argument("--sheet"); ap.add_argument("--json")
     a = ap.parse_args()
@@ -219,7 +220,7 @@ def main():
         print(f"[{f['id']} {f['layer']}/{f['sev'].upper()}] row {f['row']}: {f['issue']}"
               + (f"  (RM impact ~{f['rm']:,.2f})" if f.get("rm") else ""))
     if a.json:
-        with open(a.json,"w") as fh:
+        with open(a.json, "w", encoding="utf-8") as fh:
             json.dump({"info":info,"findings":findings,"lines":lines}, fh, indent=1, default=str)
         print(f"\nJSON written: {a.json}")
 

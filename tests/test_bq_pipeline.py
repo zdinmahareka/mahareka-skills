@@ -1,6 +1,8 @@
 """bq-error-checker v2.0: a full run through the four stages on a synthetic BQ (G10 + G12)."""
-import json, re, subprocess, sys, tempfile, unittest
+import os, json, re, subprocess, sys, tempfile, unittest
 from pathlib import Path
+
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
 from openpyxl import load_workbook
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -10,15 +12,15 @@ SKILL = Path(__file__).resolve().parents[1] / "skills" / "bq-error-checker"
 PY = sys.executable
 
 def run(*args, ok=True):
-    p = subprocess.run([PY, "-I", *map(str, args)], capture_output=True, text=True)
+    p = subprocess.run([PY, "-P", *map(str, args)], capture_output=True, text=True, encoding="utf-8")
     if ok and p.returncode: raise AssertionError(p.stdout + p.stderr)
     return p
 
 def set_front(path, **kv):
-    t = path.read_text()
+    t = path.read_text(encoding="utf-8")
     for k, v in kv.items():
         t = re.sub(rf"^{k}:[^\n]*", f"{k}: {v}", t, count=1, flags=re.M)
-    path.write_text(t)
+    path.write_text(t, encoding="utf-8")
 
 class Pipeline(unittest.TestCase):
     def setUp(self):
@@ -36,7 +38,7 @@ class Pipeline(unittest.TestCase):
         # the stamp
         self.assertTrue((r / "00_input" / "test_bq.xlsx").is_file())
         for st in ("01_intake", "02_checks", "03_review", "04_report"): self.assertTrue((r / st).is_dir())
-        self.assertIn("T050", (r / "RUN.md").read_text())
+        self.assertIn("T050", (r / "RUN.md").read_text(encoding="utf-8"))
 
         # 01: blank intake fails; open questions fail; filled passes
         self.assertIn("not set", self.gate("01", ok=False).stdout)
@@ -48,11 +50,11 @@ class Pipeline(unittest.TestCase):
         self.gate("01")
 
         # 02: DEGRADED stops; INTACT passes after the scripts run
-        (r / "02_checks" / "boot.txt").write_text("DEGRADED: qs_boot.py missing\n")
+        (r / "02_checks" / "boot.txt").write_text("DEGRADED: qs_boot.py missing\n", encoding="utf-8")
         run(SKILL / "_tools/check_bq.py", r / "00_input/test_bq.xlsx", "--sheet", "BQ CLIENT",
             "--json", r / "02_checks/findings.json")
         self.assertIn("DEGRADED", self.gate("02", ok=False).stdout)
-        (r / "02_checks" / "boot.txt").write_text("QS BOOT: INTACT\n")
+        (r / "02_checks" / "boot.txt").write_text("QS BOOT: INTACT\n", encoding="utf-8")
         out = run(SKILL / "_tools/rate_learn.py", "--lines", r / "02_checks/findings.json", "--history", self.hist,
                   "--project", "T050", "--subcon", "SMC", "--basis", "SELL",
                   "--out", r / "04_report/Rate_History_updated.xlsx", "--json", r / "02_checks/rates.json")
@@ -60,7 +62,7 @@ class Pipeline(unittest.TestCase):
         self.gate("02")
 
         # the regression answers (G10)
-        f = json.loads((r / "02_checks/findings.json").read_text())["findings"]
+        f = json.loads((r / "02_checks/findings.json").read_text(encoding="utf-8"))["findings"]
         issues = {(x["row"], x["layer"]): x["issue"] for x in f}
         self.assertIn("Qty x Rate = 1,350.00 but Amount = 1,450.00", issues[(8, "A")])     # arithmetic
         self.assertIn("Sibling outlier: rate 72.00", issues[(6, "B")])                    # lesson 1 decimal typo
@@ -69,7 +71,7 @@ class Pipeline(unittest.TestCase):
         self.assertFalse(any(x["row"] == 9 for x in f), "lesson 14: 'not included' must not be flagged")
         self.assertEqual([x["id"] for x in f], [f"F{i:02d}" for i in range(1, len(f) + 1)])
 
-        rates = json.loads((r / "02_checks/rates.json").read_text())
+        rates = json.loads((r / "02_checks/rates.json").read_text(encoding="utf-8"))
         self.assertEqual(rates["layout"], "current")
         wardrobe = [x for x in rates["flags"] if x["row"] == 7]
         self.assertTrue(wardrobe and wardrobe[0]["dev_pct"] > 15, rates)                  # 690 vs median 530
@@ -87,11 +89,11 @@ class Pipeline(unittest.TestCase):
         review = r / "03_review" / "review.md"
         ids = [x["id"] for x in f] + [x["id"] for x in rates["flags"]]
         rows = "".join(f"| {i} | - | - | KEEP | - |\n" for i in ids[:-1])
-        review.write_text(review.read_text().replace("|---|---|---|---|---|\n", "|---|---|---|---|---|\n" + rows))
+        review.write_text(review.read_text(encoding="utf-8").replace("|---|---|---|---|---|\n", "|---|---|---|---|---|\n" + rows))
         self.assertIn(ids[-1], self.gate("03", ok=False).stdout)
-        review.write_text(review.read_text().replace(rows, rows + f"| {ids[-1]} | - | - | MAYBE | - |\n"))
+        review.write_text(review.read_text(encoding="utf-8").replace(rows, rows + f"| {ids[-1]} | - | - | MAYBE | - |\n"))
         self.assertIn("decision must be", self.gate("03", ok=False).stdout)
-        review.write_text(review.read_text().replace("MAYBE", "DROP"))
+        review.write_text(review.read_text(encoding="utf-8").replace("MAYBE", "DROP"))
         self.gate("03")
 
         status = run(SKILL / "_tools/gate.py", r, "status").stdout
@@ -110,7 +112,7 @@ class Pipeline(unittest.TestCase):
         out = run(SKILL / "_tools/rate_learn.py", "--lines", fj, "--history", legacy, "--project", "T",
                   "--out", self.tmp / "o.xlsx", "--json", self.tmp / "r.json")
         self.assertIn("MEMORY layout: legacy", out.stdout)
-        self.assertGreaterEqual(json.loads((self.tmp / "r.json").read_text())["matched"], 1)
+        self.assertGreaterEqual(json.loads((self.tmp / "r.json").read_text(encoding="utf-8"))["matched"], 1)
 
     def test_run_folders_never_collide(self):
         again = run(SKILL / "_tools/new_run.py", "--project", "T050", "--root", self.tmp).stdout.strip()
