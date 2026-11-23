@@ -27,17 +27,19 @@ Methodology). Rules, taxonomy and report formats are unchanged from v1.1; they m
 Rates are never in this skill. `QS_RATEBASE` (owned by `mahareka-qs-agent`) and
 `Rate_History.xlsx` already live on this machine, in its KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`,
 else `~/mahareka-knowledge`, else wherever `qs_boot.py` is found under home); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
-`python3 SKILL/_tools/where.py` prints both. Hermes agents only (use `py` where that is the
-Python command).
+`python SKILL/_tools/where.py` prints both, and **PY**: the Python to use for every other
+command (it has openpyxl; any of `python3`, `py`, `python` runs where.py). Hermes agents only.
 
 ## Start here
 
+0. `python3 SKILL/_tools/where.py` (or `py` / `python`): note **PY**, KNOWLEDGE and RUNS.
+   PY MISSING → stop and say "rerun install-hermes.sh".
 1. Make the run folder, then work stage by stage:
-   `python3 SKILL/_tools/new_run.py --project <code> --input <file>` (SKILL = this skill's
+   `PY SKILL/_tools/new_run.py --project <code> --input <file>` (SKILL = this skill's
    folder). It prints RUN.
 2. Read `CONTEXT.md`, then only the contract of the stage you are on.
-3. After each stage: `python3 SKILL/_tools/gate.py RUN <stage>`. A fail stops the run.
-4. Where am I? `python3 SKILL/_tools/gate.py RUN status`.
+3. After each stage: `PY SKILL/_tools/gate.py RUN <stage>`. A fail stops the run.
+4. Where am I? `PY SKILL/_tools/gate.py RUN status`.
 
 ## Route by task
 

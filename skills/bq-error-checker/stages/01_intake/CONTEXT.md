@@ -35,5 +35,5 @@ Do NOT load: `_shared/reporting.md`, `_shared/lessons.md`, rate memory, other ru
   subcon, budget_target, compare_with, open_questions)
 
 ## Check
-`python3 SKILL/_tools/gate.py RUN 01` — passes when file, sheet, mode, depth and basis are set
+`PY SKILL/_tools/gate.py RUN 01` — passes when file, sheet, mode, depth and basis are set
 and `open_questions: 0`. While questions are open, the run waits for Zaim.

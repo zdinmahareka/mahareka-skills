@@ -38,5 +38,5 @@ Do NOT load: `_shared/reporting.md` (stage 04), the whole BQ again (use the line
 - `review.md` → `RUN/03_review/` (copied from the stamp; one row per id)
 
 ## Check
-`python3 SKILL/_tools/gate.py RUN 03` — passes when every `F`/`R` id from stage 02 appears
+`PY SKILL/_tools/gate.py RUN 03` — passes when every `F`/`R` id from stage 02 appears
 in `review.md` with a decision. No unreviewed flag reaches the report.

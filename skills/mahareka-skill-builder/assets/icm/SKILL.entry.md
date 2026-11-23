@@ -23,9 +23,9 @@ Skill version **1.0** — built to the Mahareka ICM Standard.
 
 ## Start here
 
-1. `python3 SKILL/_tools/new_run.py --project <code> --input <file>` prints RUN.
+1. `PY SKILL/_tools/new_run.py --project <code> --input <file>` prints RUN.
 2. Read `CONTEXT.md`, then only the contract of the stage you are on.
-3. After each stage: `python3 SKILL/_tools/gate.py RUN <stage>`. A fail stops the run.
+3. After each stage: `PY SKILL/_tools/gate.py RUN <stage>`. A fail stops the run.
 
 ## Route by task
 
