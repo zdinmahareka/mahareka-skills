@@ -51,7 +51,8 @@ class HermesInstall(unittest.TestCase):
 
     def install(self, skills, **extra):
         # the installer must use this Python (it has openpyxl); python3 on PATH may be a Hermes venv without it
-        env = {**self.env, "MAHAREKA_PYTHON": Path(sys.executable).as_posix(), **extra}
+        env = {**self.env, "MAHAREKA_PYTHON": Path(sys.executable).as_posix(), "MAHAREKA_SET_DIR": "1", **extra}
+        env = {k: v for k, v in env.items() if v is not None}
         return subprocess.run([BASH, (ROOT / "tools" / "install-hermes.sh").as_posix(), skills.as_posix()],
                               capture_output=True, text=True, encoding="utf-8", env=env)
 
@@ -72,8 +73,13 @@ class HermesInstall(unittest.TestCase):
     @unittest.skipIf(os.environ.get("MAHAREKA_SKIP_TESTS"), "already inside an install run")
     def test_install_replaces_in_place_and_backs_up(self):
         skills, old, qs = self.agent_layout()
-        p = self.install(skills)
+        (old / "_local").mkdir(); (old / "_local" / "lessons.md").write_text("mine", encoding="utf-8")
+        p = self.install(skills)                                   # the old copy is not from this repo: kept
+        self.assertEqual(p.returncode, 3, p.stdout + p.stderr); self.assertIn("bq-error-checker: KEPT (local_change)", p.stdout)
+        self.assertTrue((old / "references" / "x.md").is_file()); self.assertFalse((self.home / "mc-backups" / "skills").exists() and list((self.home / "mc-backups" / "skills").glob("bq-*")))
+        p = self.install(skills, MAHAREKA_REPLACE="bq-error-checker")   # Zaim says replace it
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual((old / "_local" / "lessons.md").read_text(encoding="utf-8"), "mine", "the machine's own notes are carried over")
         self.assertIn("version **2.0**", (old / "SKILL.md").read_text(encoding="utf-8"))
         self.assertFalse((old / "references").exists(), "old files must not linger")
         self.assertTrue((skills / "mahareka" / "mahareka-skill-builder" / "SKILL.md").is_file())
@@ -81,7 +87,7 @@ class HermesInstall(unittest.TestCase):
         self.assertEqual(len(backups), 1); self.assertTrue((backups[0] / "references" / "x.md").is_file())
         self.assertEqual(len(list(skills.rglob("bq-error-checker/SKILL.md"))), 1)
         self.assertTrue((skills / "mahareka" / "chief-of-staff" / "_tools" / "roster.py").is_file())
-        self.assertEqual((self.home / ".mahareka" / "skills-dir").read_text(encoding="utf-8").strip(), skills.as_posix())   # for auto-update
+        self.assertTrue(os.path.samefile((self.home / ".mahareka" / "skills-dir").read_text(encoding="utf-8").strip(), skills))   # for auto-update
         self.assertEqual((qs / "qs_boot.py").read_text(encoding="utf-8"), "print('QS BOOT: INTACT')\n", "the QS agent's engines are never touched")
         self.assertEqual((qs / "QS_RATEBASE_test_a.xlsx").read_bytes(), b"x", "the ratebase is never touched")
         self.assertIn("rule R-MASTER", p.stdout); self.assertIn("R-MASTER", (qs.parent / "SKILL.md").read_text(encoding="utf-8"))
@@ -94,6 +100,42 @@ class HermesInstall(unittest.TestCase):
         self.assertEqual(w["knowledge"], str(qs)); self.assertEqual(w["knowledge_found_by"], "skill mahareka-qs-agent")
         self.assertEqual(w["python"], recorded); self.assertEqual(w["python_found_by"], "recorded by install")
         self.assertIsNone(w["rate_history"])
+
+    @unittest.skipIf(os.environ.get("MAHAREKA_SKIP_TESTS"), "already inside an install run")
+    def test_install_never_guesses_the_folder_and_keeps_local_edits(self):
+        skills = self.home / ".hermes" / "profiles" / "agent" / "skills"; skills.mkdir(parents=True)
+        other = self.home / ".hermes" / "backups" / "pkg" / "files" / "skills"; other.mkdir(parents=True)
+        p = self.install(skills, MAHAREKA_SET_DIR=None)            # no recorded folder: nothing installs
+        self.assertEqual(p.returncode, 1); self.assertIn("no recorded skills folder", p.stdout); self.assertEqual(list(skills.iterdir()), [])
+        self.assertEqual(self.install(skills).returncode, 0)       # first install, by hand
+        cos = skills / "mahareka" / "chief-of-staff" / "SKILL.md"; self.assertTrue(cos.is_file())
+        p = self.install(other, MAHAREKA_SET_DIR=None)             # a backup or another profile is refused
+        self.assertEqual(p.returncode, 1); self.assertIn("is not this machine's recorded skills folder", p.stdout); self.assertEqual(list(other.iterdir()), [])
+        p = self.install(skills, MAHAREKA_SET_DIR=None)            # unchanged: nothing is moved
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr); self.assertIn("chief-of-staff: already this version", p.stdout)
+        self.assertFalse((self.home / "mc-backups" / "skills").exists() and list((self.home / "mc-backups" / "skills").iterdir()))
+        cos.write_text(cos.read_text(encoding="utf-8") + "\n## Lesson Hermes learned\n- keep me\n", encoding="utf-8")   # Hermes patched it
+        (cos.parent / "_local").mkdir(); (cos.parent / "_local" / "notes.md").write_text("x", encoding="utf-8")            # _local alone is not an edit
+        p = self.install(skills, MAHAREKA_SET_DIR=None)
+        self.assertEqual(p.returncode, 3, p.stdout + p.stderr); self.assertIn("KEPT (local_change): chief-of-staff", p.stdout)
+        self.assertIn("keep me", cos.read_text(encoding="utf-8")); self.assertIn("bq-error-checker: already this version", p.stdout)
+
+    def test_skill_state_knows_this_repos_own_versions(self):
+        sys.path.insert(0, str(ROOT / "tools")); self.addCleanup(sys.path.remove, str(ROOT / "tools"))
+        import skill_state as st
+        self.assertEqual(st.decide(None, "a", None, ()), "new"); self.assertEqual(st.decide("a", "a", None, ()), "same")
+        self.assertEqual(st.decide("old", "a", "old", ()), "clean"); self.assertEqual(st.decide("old", "a", None, {"old"}), "clean")
+        self.assertEqual(st.decide("edited", "a", "old", {"older"}), "local_change")
+        a = self.home / "a"; b = self.home / "b"
+        for d, nl in ((a, "\n"), (b, "\r\n")):
+            (d / "__pycache__").mkdir(parents=True); (d / "_local").mkdir()
+            (d / "SKILL.md").write_bytes(f"x{nl}y{nl}".encode()); (d / "__pycache__" / "c.pyc").write_bytes(nl.encode()); (d / "_local" / "n.md").write_text(str(d), encoding="utf-8")
+        self.assertEqual(st.fingerprint(a), st.fingerprint(b), "line endings, caches and _local don't count")
+        (b / "SKILL.md").write_bytes(b"x\ny\nz\n"); self.assertNotEqual(st.fingerprint(a), st.fingerprint(b))
+        if (ROOT / ".git").exists() and shutil.which("git"):      # an unedited copy of any past version is recognised
+            past = st.history(ROOT, "bq-error-checker")
+            head = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain", "--", "skills/bq-error-checker"], capture_output=True, text=True).stdout
+            if past and not head.strip(): self.assertIn(st.fingerprint(ROOT / "skills" / "bq-error-checker"), past)
 
     def test_install_stops_on_a_python_without_openpyxl(self):
         skills, old, _ = self.agent_layout()

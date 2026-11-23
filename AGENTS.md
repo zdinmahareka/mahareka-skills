@@ -11,7 +11,9 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 | `skills/<name>/` | one skill each, exactly as it installs (`SKILL.md` at its top) |
 | `skills/mahareka-skill-builder/references/icm-standard.md` | the standard: shapes, rules M1–M10, walk test |
 | `tests/` | regression and structure tests (synthetic data only) |
-| `tools/install-hermes.sh` | installs skills into a Hermes profile (backs up the old copy) |
+| `tools/install-hermes.sh` | installs skills into this machine's recorded Hermes skills folder; keeps a copy that was edited on the machine |
+| `tools/skill_state.py` | tells whether an installed skill is unedited (recorded at install, or a version in this repo's history) |
+| `tools/patch_qs_agent.py` | the approved changes to the installed QS agent (windows, rule R-MASTER) |
 
 ## Skills
 
@@ -28,4 +30,10 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 | Build or audit a skill | `skills/mahareka-skill-builder/SKILL.md` |
 | Reshape a skill to ICM | `skills/mahareka-skill-builder/references/icm-standard.md`, section 4 |
 | Test everything | `python3 -m unittest discover -s tests` |
-| Install on a Hermes machine | `bash tools/install-hermes.sh <skills dir>` |
+| Install on a Hermes machine | first time: `MAHAREKA_SET_DIR=1 bash tools/install-hermes.sh <skills dir>`; after that auto-update runs it |
+
+## Install rules
+
+- **One folder per machine.** The first install records it in `~/.mahareka/skills-dir`; any other folder is refused. A machine with no recorded folder installs nothing (the laptop loads MatDuo's copy through Hermes's `skills.external_dirs`).
+- **Local edits are kept.** Hermes edits skills itself (curator, `skill_manage`). A copy that is not exactly a version this repo produced is left alone; the run ends with exit 3 and `KEPT (local_change): <name>`. Zaim decides: merge the edits into the repo, or `MAHAREKA_REPLACE="<name>"` (the old copy still goes to `~/mc-backups/skills/`).
+- **`_local/` belongs to the machine.** It is never compared and is carried over on every replace.
