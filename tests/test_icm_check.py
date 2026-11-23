@@ -22,7 +22,7 @@ class IcmCheck(unittest.TestCase):
         shutil.copytree(ROOT / "skills" / "bq-error-checker", tmp)
         (tmp / "_templates" / "SKILL.md").write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")
         c = tmp / "stages" / "03_review" / "CONTEXT.md"
-        c.write_text(c.read_text(encoding="utf-8").replace("## Check", "## Verify"))
+        c.write_text(c.read_text(encoding="utf-8").replace("## Check", "## Verify"), encoding="utf-8")
         (tmp / "stages" / "04_report").rename(tmp / "stages" / "05_report")
         p = check(tmp)
         self.assertEqual(p.returncode, 1)

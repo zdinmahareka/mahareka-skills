@@ -89,11 +89,11 @@ class Pipeline(unittest.TestCase):
         review = r / "03_review" / "review.md"
         ids = [x["id"] for x in f] + [x["id"] for x in rates["flags"]]
         rows = "".join(f"| {i} | - | - | KEEP | - |\n" for i in ids[:-1])
-        review.write_text(review.read_text(encoding="utf-8").replace("|---|---|---|---|---|\n", "|---|---|---|---|---|\n" + rows))
+        review.write_text(review.read_text(encoding="utf-8").replace("|---|---|---|---|---|\n", "|---|---|---|---|---|\n" + rows), encoding="utf-8")
         self.assertIn(ids[-1], self.gate("03", ok=False).stdout)
-        review.write_text(review.read_text(encoding="utf-8").replace(rows, rows + f"| {ids[-1]} | - | - | MAYBE | - |\n"))
+        review.write_text(review.read_text(encoding="utf-8").replace(rows, rows + f"| {ids[-1]} | - | - | MAYBE | - |\n"), encoding="utf-8")
         self.assertIn("decision must be", self.gate("03", ok=False).stdout)
-        review.write_text(review.read_text(encoding="utf-8").replace("MAYBE", "DROP"))
+        review.write_text(review.read_text(encoding="utf-8").replace("MAYBE", "DROP"), encoding="utf-8")
         self.gate("03")
 
         status = run(SKILL / "_tools/gate.py", r, "status").stdout
