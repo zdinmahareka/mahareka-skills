@@ -38,15 +38,17 @@ say why in the root `CONTEXT.md`.
 │  └─ run/                     the stamp of one run: RUN.md + blank output files
 └─ _tools/                     new_run.py, gate.py, the engines
 
-RUN = <outputs>/<runs_dir>/<date>_<project>/      the PRODUCT: one folder per run
+RUN = RUNS/<runs_dir>/<date>_<project>/         the PRODUCT: one folder per run
 ├─ 00_input/                   the files as uploaded, never edited
 ├─ 01_<verb>/  output + check.md
 └─ 02_<verb>/  output + check.md
 ```
 
-RUN lives outside the skill because the skill folder is read-only:
-`/mnt/user-data/outputs/` in Claude, the agent's work folder in Hermes. `new_run.py` makes it
-and prints its path.
+RUN lives outside the skill so runs never mix with the installed skills: RUNS is
+`$MAHAREKA_RUNS`, default `~/mahareka-runs`. `new_run.py` makes it and prints its path.
+Data the skills read (ratebase, registry, memory workbooks) lives in KNOWLEDGE:
+`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`. Mahareka skills are for the Hermes
+agents only.
 
 ## 3. The rules (M1–M10)
 
@@ -70,7 +72,7 @@ and prints its path.
 - **M9 Names.** Stages `NN_kebab` from `01`, no gaps. Underscore folders are about the skill,
   not the work. **Only the entry is named `SKILL.md`**: Hermes and Mission Control count every
   `SKILL.md` as a skill, so templates are named `SKILL.entry.md`.
-- **M10 No data in the skill.** Memory workbooks stay in project knowledge (an `.xlsx` is a
+- **M10 No data in the skill.** Memory workbooks stay in KNOWLEDGE (an `.xlsx` is a
   zip and cannot ship inside a skill package). The skill ships rules, contracts, templates
   and tools.
 

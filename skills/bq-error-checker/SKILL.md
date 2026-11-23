@@ -21,11 +21,14 @@ Methodology). Rules, taxonomy and report formats are unchanged from v1.1; they m
 | `stages/NN_*/CONTEXT.md` | one contract per stage: inputs, process, outputs, check | rarely |
 | `_shared/` | the factory: taxonomy, conventions, lessons, learning, reporting, conflicts | on re-package |
 | `_templates/` | blank stamps: `run/` (a new audit) and `report-mode1.md` | rarely |
-| `_tools/` | `new_run.py`, `check_bq.py`, `rate_learn.py`, `gate.py` | on re-package |
+| `_tools/` | `where.py`, `new_run.py`, `check_bq.py`, `rate_learn.py`, `gate.py` | on re-package |
 | **RUN** (outside the skill) | the product: one folder per audit, made by `new_run.py` | every audit |
 
 Rates are never in this skill. `QS_RATEBASE` (owned by `mahareka-qs-agent`) and
-`Rate_History.xlsx` live in project knowledge.
+`Rate_History.xlsx` live in this machine's KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default
+`~/mahareka-knowledge`); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
+`python3 SKILL/_tools/where.py` prints both. Hermes agents only (use `py` where that is the
+Python command).
 
 ## Start here
 

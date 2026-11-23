@@ -2,7 +2,7 @@
 """
 Stamp a new run folder (the product) from this skill's _templates/run/ (the factory).
 Usage: python new_run.py --project N050 --input BQ.xlsx [--input quote.pdf] [--root DIR]
-Root: --root, else /mnt/user-data/outputs when it exists (Claude), else the current folder.
+Root: --root, else $MAHAREKA_RUNS, else ~/mahareka-runs.
 Makes ROOT/<runs_dir>/<date>_<project>/ with 00_input/ (copies, never edited), one folder per
 stage in stages/, and the stamped templates. Prints the run path (RUN).
 """
@@ -19,7 +19,7 @@ def main():
     tpl = SKILL / "_templates" / "run"
     m = re.search(r"^runs_dir:\s*(\S+)", (tpl / "RUN.md").read_text(), re.M)
     runs_dir = m.group(1) if m else SKILL.name + "-runs"
-    root = Path(a.root) if a.root else (Path("/mnt/user-data/outputs") if Path("/mnt/user-data/outputs").is_dir() else Path.cwd())
+    root = Path(a.root or os.environ.get("MAHAREKA_RUNS") or Path.home() / "mahareka-runs").expanduser()
     date = datetime.date.today().isoformat()
     slug = re.sub(r"[^a-z0-9]+", "-", a.project.lower()).strip("-") or "run"
     run = root / runs_dir / f"{date}_{slug}"
