@@ -9,7 +9,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS="${1:?usage: install-hermes.sh <hermes skills dir> [skill ...]}"; shift || true
 [ -d "$SKILLS" ] || { echo "[install] no such skills folder: $SKILLS"; exit 1; }
-NAMES=("$@"); [ ${#NAMES[@]} -gt 0 ] || NAMES=(bq-error-checker mahareka-skill-builder)
+NAMES=("$@"); [ ${#NAMES[@]} -gt 0 ] || NAMES=(bq-error-checker mahareka-skill-builder chief-of-staff)
 
 # The Python the skills run with (needs openpyxl): MAHAREKA_PYTHON, else the first of
 # python3 / py / python that has openpyxl. Recorded in ~/.mahareka/python for where.py.
@@ -42,6 +42,8 @@ echo "[install] tests: $(grep -oE 'Ran [0-9]+ tests' "$LOG") OK"
 find "$REPO" -name __pycache__ -prune -exec rm -rf {} +
 
 mkdir -p "$HOME/.mahareka" && printf '%s\n' "$PY" > "$HOME/.mahareka/python"
+# where the skills go on this machine, so auto-update can install new versions without being told
+(cd "$SKILLS" && pwd) > "$HOME/.mahareka/skills-dir"
 
 BQ_DEST=""
 STAMP="$(date +%Y%m%d-%H%M%S)"; BK="$HOME/mc-backups/skills"; mkdir -p "$BK"
@@ -61,6 +63,8 @@ for n in "${NAMES[@]}"; do
   find "$dest" -name __pycache__ -prune -exec rm -rf {} +
   echo "[install] $n: installed at $dest ($(grep -oE 'version \*\*[0-9.]+\*\*' "$dest/SKILL.md" | head -1 | tr -d '*'))"
 done
+# approved changes to the installed QS agent (windows + ratebase master rule); safe to repeat
+"$PY" "$REPO/tools/patch_qs_agent.py" "$SKILLS" || echo "[install] qs-agent not changed (see above)"
 # paths as the installed skill sees them (it looks for mahareka-qs-agent next to itself)
 "$PY" "${BQ_DEST:-$REPO/skills/bq-error-checker}/_tools/where.py"
 echo "[install] done"
