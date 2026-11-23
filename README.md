@@ -18,7 +18,7 @@ new skill revision.
 
 | Name | Default | Holds |
 |---|---|---|
-| KNOWLEDGE | `~/mahareka-knowledge` (`$MAHAREKA_KNOWLEDGE`) | `qs_boot.py`, QS_RATEBASE, `Rate_History.xlsx`, registry |
+| KNOWLEDGE | `$MAHAREKA_KNOWLEDGE`, else `~/mahareka-knowledge`, else found by searching home | `qs_boot.py`, QS_RATEBASE, `Rate_History.xlsx`, registry (already on the machine; never copied) |
 | RUNS | `~/mahareka-runs` (`$MAHAREKA_RUNS`) | one folder per audit run |
 
 ## Test
