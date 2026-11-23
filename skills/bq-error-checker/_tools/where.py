@@ -48,7 +48,7 @@ def python():
     env = os.environ.get("MAHAREKA_PYTHON")
     if env: return os.path.expanduser(env), "env"
     if PY_FILE.is_file():
-        rec = PY_FILE.read_text().strip()
+        rec = PY_FILE.read_text(encoding="utf-8").strip()
         if rec: return rec, "recorded by install"
     if importlib.util.find_spec("openpyxl"): return sys.executable, "this python"
     return None, None
@@ -76,6 +76,7 @@ def rate_history(k):
     return (found[0], "search") if found else (None, None)
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     py, py_how = python()
     k, how = knowledge(); qs = k / "qs_boot.py"; rh, rh_how = rate_history(k)
     info = {"python": py, "python_found_by": py_how,

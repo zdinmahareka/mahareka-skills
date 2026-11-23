@@ -12,7 +12,7 @@ DECISIONS = ("KEEP", "DOWNGRADE", "DROP", "ASK")
 
 def front(path):
     """Frontmatter as a dict; inline '# comments' stripped."""
-    m = re.match(r"---\n(.*?)\n---", path.read_text(), re.S)
+    m = re.match(r"---\n(.*?)\n---", path.read_text(encoding="utf-8", errors="replace"), re.S)
     out = {}
     for line in (m.group(1).splitlines() if m else []):
         if ":" in line:
@@ -40,9 +40,9 @@ def g02(run):
     d = run / "02_checks"
     boot = d / "boot.txt"
     if not boot.is_file(): return "boot.txt missing: run qs_boot.py first"
-    if "DEGRADED" in boot.read_text().upper(): return "rate authority DEGRADED: name the files to re-upload, then rerun"
+    if "DEGRADED" in boot.read_text(encoding="utf-8", errors="replace").upper(): return "rate authority DEGRADED: name the files to re-upload, then rerun"
     fj = d / "findings.json"
-    try: data = json.loads(fj.read_text())
+    try: data = json.loads(fj.read_text(encoding="utf-8", errors="replace"))
     except (OSError, ValueError): return "findings.json missing or not valid JSON"
     sheet = front(run / "01_intake" / "intake.md").get("sheet")
     if data.get("info", {}).get("sheet") != sheet:
@@ -50,22 +50,22 @@ def g02(run):
     if any("id" not in f for f in data.get("findings", [])): return "findings without ids: rerun check_bq.py v2.0"
     rj = d / "rates.json"
     if rj.exists():
-        try: json.loads(rj.read_text())
+        try: json.loads(rj.read_text(encoding="utf-8", errors="replace"))
         except ValueError: return "rates.json not valid JSON"
     return None
 
 def ids_from_02(run):
     d = run / "02_checks"
-    ids = [f["id"] for f in json.loads((d / "findings.json").read_text()).get("findings", [])]
+    ids = [f["id"] for f in json.loads((d / "findings.json").read_text(encoding="utf-8", errors="replace")).get("findings", [])]
     if (d / "rates.json").exists():
-        ids += [f["id"] for f in json.loads((d / "rates.json").read_text()).get("flags", [])]
+        ids += [f["id"] for f in json.loads((d / "rates.json").read_text(encoding="utf-8", errors="replace")).get("flags", [])]
     return ids
 
 def g03(run):
     p = run / "03_review" / "review.md"
     if not p.is_file(): return "review.md missing"
     rows = {}
-    for line in p.read_text().splitlines():
+    for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) >= 4 and re.fullmatch(r"[FRJ]\d{2,}", cells[0]):
             rows[cells[0]] = cells[3].upper()
@@ -78,12 +78,13 @@ def g03(run):
 GATES = {"01": g01, "02": g02, "03": g03}
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     if len(sys.argv) != 3: sys.exit(__doc__)
     run, what = Path(sys.argv[1]), sys.argv[2]
     if what == "status":
         for d in sorted(p for p in run.iterdir() if p.is_dir() and re.match(r"\d\d_", p.name) and not p.name.startswith("00")):
             c = d / "check.md"
-            verdict = c.read_text().splitlines()[0] if c.is_file() else ("awaiting Zaim" if d.name.startswith("04") else "not checked")
+            verdict = c.read_text(encoding="utf-8", errors="replace").splitlines()[0] if c.is_file() else ("awaiting Zaim" if d.name.startswith("04") else "not checked")
             print(f"{d.name:<14} {verdict}")
         return
     if what not in GATES: sys.exit(f"unknown stage {what}: use 01, 02, 03 or status")
@@ -91,11 +92,11 @@ def main():
     if d is None: sys.exit(f"no {what}_ folder in {run}")
     prev = {"02": "01", "03": "02"}.get(what)
     pd = stage_dir(run, prev) if prev else None
-    if prev and not (pd and (pd / "check.md").is_file() and (pd / "check.md").read_text().startswith("pass")):
+    if prev and not (pd and (pd / "check.md").is_file() and (pd / "check.md").read_text(encoding="utf-8", errors="replace").startswith("pass")):
         why = f"stage {prev} has not passed its gate"
     else:
         why = GATES[what](run)
-    (d / "check.md").write_text(("pass" if why is None else f"fail: {why}") + "\n")
+    (d / "check.md").write_text(("pass" if why is None else f"fail: {why}") + "\n", encoding="utf-8")
     print(f"{d.name}: " + ("pass" if why is None else f"fail: {why}"))
     sys.exit(0 if why is None else 1)
 

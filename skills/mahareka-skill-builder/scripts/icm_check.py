@@ -28,7 +28,7 @@ def check(skill):
     entry = skill / "SKILL.md"
     if not entry.is_file():
         return [("BLOCKER", "no SKILL.md")]
-    fm, body = frontmatter(entry.read_text())
+    fm, body = frontmatter(entry.read_text(encoding="utf-8"))
     if not re.search(r"^name:\s*\S", fm, re.M): add("BLOCKER", "SKILL.md frontmatter has no name")
     if not re.search(r"^description:\s*\S", fm, re.M): add("BLOCKER", "SKILL.md frontmatter has no description")
     for extra in skill.rglob("SKILL.md"):
@@ -40,7 +40,7 @@ def check(skill):
     for md in skill.rglob("*.md"):
         rel = md.relative_to(skill)
         if rel.parts[0] in ("_templates", "assets"): continue   # stamps hold placeholders
-        text = md.read_text()
+        text = md.read_text(encoding="utf-8")
         for p in (PATH_RE.findall(text) if md in routing else []):
             p = p.rstrip(".,;:)")
             if any(ch in p for ch in "<>*{}") or p.endswith("/"):
@@ -74,7 +74,7 @@ def check(skill):
         if int(m.group(1)) != i: add("BLOCKER", f"M9: stage '{st.name}' breaks the numbering (expected {i:02d})")
         c = st / "CONTEXT.md"
         if not c.is_file(): add("BLOCKER", f"M3: {st.name} has no CONTEXT.md"); continue
-        text = c.read_text()
+        text = c.read_text(encoding="utf-8")
         for name in ("Inputs", "Process", "Outputs", "Check"):
             if section(text, name) is None: add("BLOCKER", f"M3: {st.name}/CONTEXT.md has no '## {name}'")
         if len(re.findall(r"^## Check\s*$", text, re.M)) > 1: add("BLOCKER", f"M3: {st.name} has more than one Check")
@@ -86,7 +86,7 @@ def check(skill):
         chars = len(text)
         for p in set(PATH_RE.findall(inputs)):
             f = skill / p.rstrip(".,;:)")
-            if f.is_file(): chars += len(f.read_text(errors="ignore"))
+            if f.is_file(): chars += len(f.read_text(errors="ignore", encoding="utf-8"))
         tokens = chars // 4
         if tokens > TOKEN_BUDGET: add("BLOCKER", f"M6: {st.name} loads ~{tokens} tokens of skill files (> {TOKEN_BUDGET})")
         else: add("INFO", f"{st.name}: ~{tokens} tokens of skill files + this run's inputs")
@@ -94,6 +94,7 @@ def check(skill):
     return out
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     args = sys.argv[1:]
     if not args: sys.exit(__doc__)
     if args[0] == "--all":
