@@ -80,7 +80,11 @@ class HermesInstall(unittest.TestCase):
         backups = list((self.home / "mc-backups" / "skills").glob("bq-error-checker-*"))
         self.assertEqual(len(backups), 1); self.assertTrue((backups[0] / "references" / "x.md").is_file())
         self.assertEqual(len(list(skills.rglob("bq-error-checker/SKILL.md"))), 1)
-        self.assertTrue((qs / "qs_boot.py").is_file(), "the QS agent is never touched")
+        self.assertTrue((skills / "mahareka" / "chief-of-staff" / "_tools" / "roster.py").is_file())
+        self.assertEqual((self.home / ".mahareka" / "skills-dir").read_text(encoding="utf-8").strip(), skills.as_posix())   # for auto-update
+        self.assertEqual((qs / "qs_boot.py").read_text(encoding="utf-8"), "print('QS BOOT: INTACT')\n", "the QS agent's engines are never touched")
+        self.assertEqual((qs / "QS_RATEBASE_test_a.xlsx").read_bytes(), b"x", "the ratebase is never touched")
+        self.assertIn("rule R-MASTER", p.stdout); self.assertIn("R-MASTER", (qs.parent / "SKILL.md").read_text(encoding="utf-8"))
         self.assertIn("[install] done", p.stdout)
         self.assertIn(f"KNOWLEDGE     {qs}  (skill mahareka-qs-agent)", p.stdout)   # the installed copy's view
         # the installed copy finds the QS agent's ratebase folder and the recorded Python
