@@ -18,7 +18,8 @@ class IcmCheck(unittest.TestCase):
         self.assertIn("mahareka-skill-builder: PASS", p.stdout)
 
     def test_broken_pipeline_fails(self):
-        tmp = Path(tempfile.mkdtemp()) / "bq-error-checker"
+        base = Path(tempfile.mkdtemp()); self.addCleanup(shutil.rmtree, base, ignore_errors=True)
+        tmp = base / "bq-error-checker"
         shutil.copytree(ROOT / "skills" / "bq-error-checker", tmp)
         (tmp / "_templates" / "SKILL.md").write_text("---\nname: x\ndescription: y\n---\n", encoding="utf-8")
         c = tmp / "stages" / "03_review" / "CONTEXT.md"

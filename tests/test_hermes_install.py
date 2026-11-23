@@ -1,5 +1,5 @@
 """Hermes-only install: paths come from MAHAREKA_* or ~/, the old copy is backed up outside the skills folder."""
-import json, os, subprocess, sys, tempfile, unittest
+import json, os, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
@@ -10,6 +10,7 @@ WHERE = ROOT / "skills" / "bq-error-checker" / "_tools" / "where.py"
 class HermesInstall(unittest.TestCase):
     def setUp(self):
         self.home = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.home, ignore_errors=True)
         self.env = {k: v for k, v in os.environ.items() if not k.startswith("MAHAREKA_")}
         # bash gets forward slashes (Git Bash on Windows drops backslashes); Python reads USERPROFILE there
         self.env.update(HOME=self.home.as_posix(), USERPROFILE=str(self.home), MAHAREKA_SKIP_TESTS="1")
@@ -37,6 +38,9 @@ class HermesInstall(unittest.TestCase):
         (deep / "qs_boot.py").write_text("print('INTACT')\n", encoding="utf-8")
         (self.home / "Documents" / "QS" / "Rate_History_v3.xlsx").write_bytes(b"x")
         bk = self.home / "mc-backups" / "old"; bk.mkdir(parents=True); (bk / "qs_boot.py").write_text("", encoding="utf-8")
+        # test leftovers in a Hermes cache/scratch temp folder are never picked up
+        junk = self.home / ".hermes" / "profiles" / "a" / "cache" / "scratch" / "tmpx1" / "QS"; junk.mkdir(parents=True)
+        (junk / "qs_boot.py").write_text("", encoding="utf-8"); (junk / "Rate_History_v9.xlsx").write_bytes(b"x")
         w = self.where()
         self.assertEqual(w["knowledge"], str(deep)); self.assertEqual(w["knowledge_found_by"], "search")
         self.assertEqual(w["rate_history"], str(self.home / "Documents" / "QS" / "Rate_History_v3.xlsx"))
@@ -75,6 +79,7 @@ class HermesInstall(unittest.TestCase):
         self.assertEqual(len(list(skills.rglob("bq-error-checker/SKILL.md"))), 1)
         self.assertTrue((qs / "qs_boot.py").is_file(), "the QS agent is never touched")
         self.assertIn("[install] done", p.stdout)
+        self.assertIn(f"KNOWLEDGE     {qs}  (skill mahareka-qs-agent)", p.stdout)   # the installed copy's view
         # the installed copy finds the QS agent's ratebase folder and the recorded Python
         recorded = (self.home / ".mahareka" / "python").read_text(encoding="utf-8").strip()
         w = json.loads(subprocess.run([sys.executable, "-P", str(old / "_tools" / "where.py"), "--json"],

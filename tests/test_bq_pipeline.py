@@ -1,5 +1,5 @@
 """bq-error-checker v2.0: a full run through the four stages on a synthetic BQ (G10 + G12)."""
-import os, json, re, subprocess, sys, tempfile, unittest
+import os, shutil, json, re, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
@@ -25,6 +25,7 @@ def set_front(path, **kv):
 class Pipeline(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.bq, self.hist = self.tmp / "test_bq.xlsx", self.tmp / "Rate_History.xlsx"
         make_bq(self.bq); make_history(self.hist)
         out = run(SKILL / "_tools/new_run.py", "--project", "T050", "--input", self.bq, "--root", self.tmp)

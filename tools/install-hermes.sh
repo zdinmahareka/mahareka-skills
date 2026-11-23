@@ -33,7 +33,7 @@ fi
 PY="$("$PY" -c "import sys; print(sys.executable)")"
 echo "[install] python: $PY"
 
-LOG="$(mktemp)"
+LOG="$(mktemp)"; trap 'rm -f "$LOG"' EXIT
 ( cd "$REPO" && "$PY" -m unittest discover -s tests >"$LOG" 2>&1 ) \
   || { echo "[install] STOP: tests failed"; tail -20 "$LOG"; exit 1; }
 echo "[install] tests: $(grep -oE 'Ran [0-9]+ tests' "$LOG") OK"
@@ -41,6 +41,7 @@ find "$REPO" -name __pycache__ -prune -exec rm -rf {} +
 
 mkdir -p "$HOME/.mahareka" && printf '%s\n' "$PY" > "$HOME/.mahareka/python"
 
+BQ_DEST=""
 STAMP="$(date +%Y%m%d-%H%M%S)"; BK="$HOME/mc-backups/skills"; mkdir -p "$BK"
 for n in "${NAMES[@]}"; do
   [ -f "$REPO/skills/$n/SKILL.md" ] || { echo "[install] STOP: unknown skill $n"; exit 1; }
@@ -52,10 +53,12 @@ for n in "${NAMES[@]}"; do
     dest="$SKILLS/mahareka/$n"; mkdir -p "$(dirname "$dest")"
   fi
   cp -R "$REPO/skills/$n" "$dest"
+  if [ "$n" = "bq-error-checker" ]; then BQ_DEST="$dest"; fi
   "$PY" "$REPO/skills/mahareka-skill-builder/scripts/icm_check.py" "$dest" >/dev/null \
     || { echo "[install] STOP: icm_check failed on $dest (old copy is in $BK)"; exit 1; }
   find "$dest" -name __pycache__ -prune -exec rm -rf {} +
   echo "[install] $n: installed at $dest ($(grep -oE 'version \*\*[0-9.]+\*\*' "$dest/SKILL.md" | head -1 | tr -d '*'))"
 done
-"$PY" "$REPO/skills/bq-error-checker/_tools/where.py"
+# paths as the installed skill sees them (it looks for mahareka-qs-agent next to itself)
+"$PY" "${BQ_DEST:-$REPO/skills/bq-error-checker}/_tools/where.py"
 echo "[install] done"

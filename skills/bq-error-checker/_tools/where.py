@@ -16,19 +16,20 @@ import fnmatch, importlib.util, json, os, subprocess, sys
 from pathlib import Path
 
 SKIP = {"mc-backups", "mahareka-runs", "node_modules", "AppData", "Library", "__pycache__",
-        "venv", ".venv", "venvs", "site-packages", "qs_outputs"}
+        "venv", ".venv", "venvs", "site-packages", "qs_outputs", "cache", "scratch", "temp", "Temp"}
 MAX_DEPTH = 9
 SKILL = Path(__file__).resolve().parent.parent
 PY_FILE = Path.home() / ".mahareka" / "python"
 
 def search(pattern, root=None, max_depth=MAX_DEPTH):
     """Files under root (home) matching pattern, newest first; skips hidden folders (except
-    .hermes), backups, runs and virtualenvs."""
+    .hermes), backups, runs, virtualenvs, caches and temp folders (test leftovers live there)."""
     root = Path(root or Path.home())
     hits, base = [], len(root.parts)
     for d, dirs, files in os.walk(root):
         depth = len(Path(d).parts) - base
-        dirs[:] = [x for x in dirs if depth < max_depth and x not in SKIP and (not x.startswith(".") or x == ".hermes")]
+        dirs[:] = [x for x in dirs if depth < max_depth and x not in SKIP and not x.startswith("tmp")
+                   and (not x.startswith(".") or x == ".hermes")]
         hits += [Path(d) / f for f in files if fnmatch.fnmatch(f, pattern)]
     return sorted(hits, key=lambda p: p.stat().st_mtime, reverse=True)
 
