@@ -25,8 +25,19 @@ class HermesInstall(unittest.TestCase):
         (k / "qs_boot.py").write_text("print('INTACT')\n")
         (k / "Rate_History.xlsx").write_bytes(b"x")
         w = self.where(MAHAREKA_KNOWLEDGE=str(k))
+        self.assertEqual(w["knowledge_found_by"], "env")
         self.assertTrue(w["qs_boot"].endswith("qs_boot.py"))
         self.assertTrue(w["rate_history"].endswith("Rate_History.xlsx"))
+
+    def test_where_finds_files_already_on_the_machine(self):
+        deep = self.home / "Documents" / "QS" / "ratebase"; deep.mkdir(parents=True)
+        (deep / "qs_boot.py").write_text("print('INTACT')\n")
+        (self.home / "Documents" / "QS" / "Rate_History_v3.xlsx").write_bytes(b"x")
+        bk = self.home / "mc-backups" / "old"; bk.mkdir(parents=True); (bk / "qs_boot.py").write_text("")
+        w = self.where()
+        self.assertEqual(w["knowledge"], str(deep)); self.assertEqual(w["knowledge_found_by"], "search")
+        self.assertEqual(w["rate_history"], str(self.home / "Documents" / "QS" / "Rate_History_v3.xlsx"))
+        self.assertEqual(w["rate_history_found_by"], "search")
 
     @unittest.skipIf(os.environ.get("MAHAREKA_SKIP_TESTS"), "already inside an install run")
     def test_install_replaces_in_place_and_backs_up(self):

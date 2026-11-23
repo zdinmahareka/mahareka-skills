@@ -25,8 +25,8 @@ Methodology). Rules, taxonomy and report formats are unchanged from v1.1; they m
 | **RUN** (outside the skill) | the product: one folder per audit, made by `new_run.py` | every audit |
 
 Rates are never in this skill. `QS_RATEBASE` (owned by `mahareka-qs-agent`) and
-`Rate_History.xlsx` live in this machine's KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default
-`~/mahareka-knowledge`); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
+`Rate_History.xlsx` already live on this machine, in its KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`,
+else `~/mahareka-knowledge`, else wherever `qs_boot.py` is found under home); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
 `python3 SKILL/_tools/where.py` prints both. Hermes agents only (use `py` where that is the
 Python command).
 

@@ -9,7 +9,9 @@ their raw output. No judgment here; that is stage 03.
   `RUN/01_intake/reconstructed.xlsx` for a PDF)
 - Reference (every run): `KNOWLEDGE/Rate_History*.xlsx`, newest (or one Zaim sent with the BQ)
 - Reference (every run): `KNOWLEDGE/qs_boot.py` (owned by `mahareka-qs-agent`)
-  — KNOWLEDGE and both files are printed by `python3 SKILL/_tools/where.py`
+  — run `python3 SKILL/_tools/where.py` first: it prints KNOWLEDGE and both files. The files
+  already sit on the machine; where.py finds them (env, `~/mahareka-knowledge`, else a search of
+  home). Never copy or move them.
 
 Do NOT load: `_shared/` (stage 03 interprets), `QS_RATEBASE` contents, other runs.
 
