@@ -21,6 +21,6 @@ report. The middle is scripted and constrained by both.
 ## Invariants broken on purpose
 
 - Contract inputs use `RUN/…` and `SKILL/…` instead of relative paths. The skill folder is
-  read-only during a session, so each run lives outside it (`/mnt/user-data/outputs/bq-audit/`
-  in Claude, the agent's work folder in Hermes). `new_run.py` prints RUN.
+  part of the agent's installed skills, so each run lives outside it, in RUNS/bq-audit/
+  (`_tools/where.py`). `new_run.py` prints RUN.
 - The raw input is copied into `RUN/00_input/` and never edited; stages read it from there.

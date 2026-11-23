@@ -22,14 +22,15 @@ Do NOT load: `_shared/lessons.md`, `_shared/learning.md`, the raw BQ, other runs
 4. Where a subcon needs to clarify, add a WhatsApp-ready question draft (draft only; Zaim
    sends).
 5. Memory handover, at the end of the report:
-   - present `RUN/04_report/Rate_History_updated.xlsx` and remind Zaim to save it back to
-     project knowledge; give the counts (verified matches, new pending, flags, resolutions);
+   - present `RUN/04_report/Rate_History_updated.xlsx` and ask Zaim whether to copy it into
+     KNOWLEDGE over the old Rate_History (keep the old one beside it, dated); copy only on his
+     yes; give the counts (verified matches, new pending, flags, resolutions);
    - if memory was absent, say so and ask Zaim to attach it next time; if its last entry is
      over 30 days old, or a project gap shows, say so;
    - if Zaim corrected a flag or taught a rule, give the exact line to add to
      `_shared/lessons.md` at the next re-package;
    - if any rate or rule was added to `QS_RATEBASE`, end by telling Zaim to download the
-     published file, install it into project knowledge, and delete the old version. Never
+     published file, install it into KNOWLEDGE, and delete the old version. Never
      assume it was done (30 Jul 2026: published, never installed, stale answers followed).
 
 ## Outputs

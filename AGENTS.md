@@ -1,7 +1,8 @@
 # Mahareka Skills — entry
 
-Mahareka's own Claude and Hermes skills, built to the Mahareka ICM Standard.
-Private. Rates, registries and client data never live here: they stay in project knowledge.
+Mahareka's own skills for the Hermes agents only, built to the Mahareka ICM Standard.
+Private. Rates, registries and client data never live here: they stay in each machine's
+KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 
 ## Where things live
 
@@ -10,7 +11,7 @@ Private. Rates, registries and client data never live here: they stay in project
 | `skills/<name>/` | one skill each, exactly as it installs (`SKILL.md` at its top) |
 | `skills/mahareka-skill-builder/references/icm-standard.md` | the standard: shapes, rules M1–M10, walk test |
 | `tests/` | regression and structure tests (synthetic data only) |
-| `tools/package.py` | builds `dist/<name>.zip` for upload to Claude |
+| `tools/install-hermes.sh` | installs skills into a Hermes profile (backs up the old copy) |
 
 ## Skills
 
@@ -26,4 +27,4 @@ Private. Rates, registries and client data never live here: they stay in project
 | Build or audit a skill | `skills/mahareka-skill-builder/SKILL.md` |
 | Reshape a skill to ICM | `skills/mahareka-skill-builder/references/icm-standard.md`, section 4 |
 | Test everything | `python3 -m unittest discover -s tests` |
-| Package for Claude | `python3 tools/package.py` |
+| Install on a Hermes machine | `bash tools/install-hermes.sh <skills dir>` |

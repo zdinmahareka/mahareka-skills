@@ -10,14 +10,14 @@ description: Builds new Claude skills for Mahareka to the house standard, and au
 ## Architecture — read this first
 
 This skill is the **instruction layer** plus, since v2.0, the **ICM method**. It ships no Mahareka data.
-Every Mahareka engine, template and the registry live in **project knowledge** (`/mnt/project/`) — the layer Zaim replaces himself.
+Every Mahareka engine, template and the registry live in the **KNOWLEDGE folder** on each Hermes machine (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`) — the layer Zaim replaces himself. Hermes agents only; use `py` where that is the Python command.
 
 ```
 SKILL (this folder)   instructions · frozen · changes only on a version bump
   references/icm-standard.md   the Mahareka ICM Standard (shape of complex skills)
   assets/icm/                  starters: SKILL.entry.md, CONTEXT.root.md, stage-CONTEXT.md, run/, _tools/new_run.py
   scripts/icm_check.py         structure checker for rules M1–M10
-PROJECT KNOWLEDGE     sb_boot.py · skill_scaffold.py · skill_check.py
+KNOWLEDGE FOLDER     sb_boot.py · skill_scaffold.py · skill_check.py
   = the live layer    MAHAREKA_STANDARD.md · TYPE_A/B/C templates
                       SKILL_REGISTRY.xlsx   ← the memory that learns
 ```
@@ -35,19 +35,19 @@ Build or audit a skill
   → register it in PORTFOLIO, log the audit in AUDIT_LOG
   → what broke goes to LESSONS, what worked goes to PATTERNS,
     triggers that fired go to TRIGGERS
-  → skill_scaffold publishes an updated SKILL_REGISTRY.xlsx to outputs
-  → Zaim replaces it in PROJECT KNOWLEDGE
+  → skill_scaffold writes an updated SKILL_REGISTRY.xlsx beside the old one
+  → Zaim replaces it in KNOWLEDGE FOLDER
   → the next skill is built better
 ```
 
-Never tell Zaim to replace anything "in the skill" — the skill holds no data. Always say **project knowledge**.
+Never tell Zaim to replace anything "in the skill" — the skill holds no data. Always say **the KNOWLEDGE folder**.
 
 ## Workflow
 
-0. **Bootstrap first, every session.** `python3 /mnt/project/sb_boot.py`
+0. **Bootstrap first, every session.** `python3 $MAHAREKA_KNOWLEDGE/sb_boot.py`
    Verifies the live layer, checks version drift, reports registry state and portfolio health (which skills are blocked or unregistered). DEGRADED → name the missing files and **stop**. Never scaffold or audit from memory.
 
-1. **Classify before building.** Read `/mnt/project/MAHAREKA_STANDARD.md`, then ask the four classification questions:
+1. **Classify before building.** Read `$MAHAREKA_KNOWLEDGE/MAHAREKA_STANDARD.md`, then ask the four classification questions:
    1. Does it produce a number, rate, or decision that must be reproducible months later?
    2. Does using it create knowledge the next use should inherit?
    3. Does it need fixed knowledge longer than ~200 lines?
@@ -67,7 +67,7 @@ Never tell Zaim to replace anything "in the skill" — the skill holds no data. 
 
 3. **Scaffold.**
    ```
-   python3 /mnt/project/skill_scaffold.py --name mahareka-<domain>-<function> \
+   python3 $MAHAREKA_KNOWLEDGE/skill_scaffold.py --name mahareka-<domain>-<function> \
      --type C --subtype C1 --purpose "..." --triggers-en "..." --triggers-bm "..." \
      --memory NAME_MEMORY.xlsx --columns "ID|ITEM|..." --regression "input -> expected"
    ```
@@ -75,7 +75,7 @@ Never tell Zaim to replace anything "in the skill" — the skill holds no data. 
 
    **ICM shape:** `skill_scaffold.py` v1.0 does not yet emit stages. For a Pipeline: scaffold as usual, then reshape with the starters in `assets/icm/` (copy, fill, rename `SKILL.entry.md` → `SKILL.md`), following `references/icm-standard.md`. Reference build: `bq-error-checker` v2.0.
 
-4. **Audit.** `python3 /mnt/project/skill_check.py <path>` — or `--all` for the portfolio.
+4. **Audit.** `python3 $MAHAREKA_KNOWLEDGE/skill_check.py <path>` — or `--all` for the portfolio.
    Reports BLOCKER / WARN / INFO against the 11 principles plus cross-skill rule conflicts. Exit 1 on any blocker. Run it on every generated package before handing over, and re-run `--all` whenever a shared rule changes.
 
    ICM structure: `python3 scripts/icm_check.py <path>` (or `--all <folder>`, from this skill's folder). Checks M1–M10: one `SKILL.md` only, contracts complete with exactly one Check, stage numbering, paths that resolve, ~8k tokens per stage. Exit 1 on any blocker.

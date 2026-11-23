@@ -1,22 +1,25 @@
 # mahareka-skills
 
-Mahareka's own skills, built to the **Mahareka ICM Standard** (Interpretable Context
-Methodology: the folder structure is the agent's architecture). See `AGENTS.md`.
+Mahareka's own skills **for the Hermes agents** (MatDuo, Mattigo), built to the **Mahareka ICM
+Standard** (Interpretable Context Methodology: the folder structure is the agent's
+architecture). Not for Claude uploads. See `AGENTS.md`.
 
-## Install in Claude
+## Install on a Hermes machine
 
 ```bash
-python3 tools/package.py
+bash tools/install-hermes.sh ~/.hermes/profiles/matduo/skills
 ```
 
-Upload each `dist/<name>.zip` in Claude: Settings → Capabilities → Skills. A skill with the
-same name is replaced.
+It runs the tests, moves each old copy to `~/mc-backups/skills/`, installs the new one in the
+same place, and prints where KNOWLEDGE and RUNS are. Mission Control records the change as a
+new skill revision.
 
-## Install in Hermes
+## Per-machine folders
 
-Copy `skills/<name>/` over the agent's copy (for example
-`~/.hermes/profiles/<profile>/skills/construction/<name>/`). Mission Control records the change
-as a new revision, so it can be rolled back there.
+| Name | Default | Holds |
+|---|---|---|
+| KNOWLEDGE | `~/mahareka-knowledge` (`$MAHAREKA_KNOWLEDGE`) | `qs_boot.py`, QS_RATEBASE, `Rate_History.xlsx`, registry |
+| RUNS | `~/mahareka-runs` (`$MAHAREKA_RUNS`) | one folder per audit run |
 
 ## Test
 
