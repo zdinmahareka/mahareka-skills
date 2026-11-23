@@ -6,6 +6,9 @@ os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows co
 
 ROOT = Path(__file__).resolve().parents[1]
 WHERE = ROOT / "skills" / "bq-error-checker" / "_tools" / "where.py"
+# The bash to run the installer with. On Windows a bare "bash" from Python can start WSL's
+# System32\bash.exe instead of Git Bash, so use the one the installer exported, else PATH's.
+BASH = os.environ.get("MAHAREKA_BASH") or shutil.which("bash") or "bash"
 
 class HermesInstall(unittest.TestCase):
     def setUp(self):
@@ -49,7 +52,7 @@ class HermesInstall(unittest.TestCase):
     def install(self, skills, **extra):
         # the installer must use this Python (it has openpyxl); python3 on PATH may be a Hermes venv without it
         env = {**self.env, "MAHAREKA_PYTHON": Path(sys.executable).as_posix(), **extra}
-        return subprocess.run(["bash", (ROOT / "tools" / "install-hermes.sh").as_posix(), skills.as_posix()],
+        return subprocess.run([BASH, (ROOT / "tools" / "install-hermes.sh").as_posix(), skills.as_posix()],
                               capture_output=True, text=True, encoding="utf-8", env=env)
 
     def agent_layout(self):
