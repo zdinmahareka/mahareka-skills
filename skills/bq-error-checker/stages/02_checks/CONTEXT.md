@@ -10,8 +10,9 @@ their raw output. No judgment here; that is stage 03.
 - Reference (every run): `KNOWLEDGE/Rate_History*.xlsx`, newest (or one Zaim sent with the BQ)
 - Reference (every run): `KNOWLEDGE/qs_boot.py` (owned by `mahareka-qs-agent`)
   — run `python SKILL/_tools/where.py` first: it prints PY, KNOWLEDGE and both files. The files
-  already sit on the machine; where.py finds them (env, `~/mahareka-knowledge`, else a search of
-  home). Never copy or move them.
+  already sit on the machine; where.py finds them (env, `~/mahareka-knowledge`, else the
+  installed `mahareka-qs-agent` skill). It never searches home, so an archive or download copy
+  is never used. Never copy or move them.
 
 Do NOT load: `_shared/` (stage 03 interprets), `QS_RATEBASE` contents, other runs.
 
@@ -19,10 +20,12 @@ Do NOT load: `_shared/` (stage 03 interprets), `QS_RATEBASE` contents, other run
 1. Bootstrap the rate authority and save what it prints:
    `(cd KNOWLEDGE && PY qs_boot.py) > RUN/02_checks/boot.txt 2>&1`.
    If `qs_boot.py` is not there, write `DEGRADED: qs_boot.py missing` into `boot.txt`.
-   DEGRADED → the gate fails; name the files to re-upload and stop. Never hand-calculate as
-   a silent fallback.
+   DEGRADED → the gate fails; name the files to re-upload and stop. INTACT but FLAGGED →
+   raise the flags before trusting any number (stage 03 lists them as `ASK`). Never
+   hand-calculate as a silent fallback; use `ratebase.py`, `bif_prorata.py`, `bur_calc.py`.
 2. Layers A–C: `PY SKILL/_tools/check_bq.py <file> --sheet "<sheet>" --json RUN/02_checks/findings.json`
-3. Layer F, if where.py found a `Rate_History*.xlsx`:
+3. Layer F, if where.py found a `Rate_History*.xlsx` (only in KNOWLEDGE, or the file named in
+   `$MAHAREKA_RATE_HISTORY`; never an archive or download copy):
    `PY SKILL/_tools/rate_learn.py --lines RUN/02_checks/findings.json --history <Rate_History.xlsx> --project <project> --subcon "<subcon>" --basis <basis> --out RUN/04_report/Rate_History_updated.xlsx --json RUN/02_checks/rates.json`.
    If it was not found, run nothing: the gate writes the "no memory" note, and stage 04
    reminds Zaim to put it in KNOWLEDGE.

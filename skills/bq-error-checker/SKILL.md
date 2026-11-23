@@ -24,9 +24,11 @@ Methodology). Rules, taxonomy and report formats are unchanged from v1.1; they m
 | `_tools/` | `where.py`, `new_run.py`, `check_bq.py`, `rate_learn.py`, `gate.py` | on re-package |
 | **RUN** (outside the skill) | the product: one folder per audit, made by `new_run.py` | every audit |
 
-Rates are never in this skill. `QS_RATEBASE` (owned by `mahareka-qs-agent`) and
+Rates are never in this skill. Never quote a rate from this skill's own files. Rates come
+from memory, every time. `QS_RATEBASE` (owned by `mahareka-qs-agent`) and
 `Rate_History.xlsx` already live on this machine, in its KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`,
-else `~/mahareka-knowledge`, else wherever `qs_boot.py` is found under home); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
+else `~/mahareka-knowledge`, else the installed `mahareka-qs-agent` skill's `scripts/`; never an
+archive or download copy); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
 `python SKILL/_tools/where.py` prints both, and **PY**: the Python to use for every other
 command (it has openpyxl; any of `python3`, `py`, `python` runs where.py). Hermes agents only.
 

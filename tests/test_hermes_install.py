@@ -36,18 +36,18 @@ class HermesInstall(unittest.TestCase):
         self.assertTrue(w["qs_boot"].endswith("qs_boot.py"))
         self.assertTrue(w["rate_history"].endswith("Rate_History.xlsx"))
 
-    def test_where_finds_files_already_on_the_machine(self):
-        deep = self.home / "Documents" / "QS" / "ratebase"; deep.mkdir(parents=True)
-        (deep / "qs_boot.py").write_text("print('INTACT')\n", encoding="utf-8")
-        (self.home / "Documents" / "QS" / "Rate_History_v3.xlsx").write_bytes(b"x")
-        bk = self.home / "mc-backups" / "old"; bk.mkdir(parents=True); (bk / "qs_boot.py").write_text("", encoding="utf-8")
-        # test leftovers in a Hermes cache/scratch temp folder are never picked up
-        junk = self.home / ".hermes" / "profiles" / "a" / "cache" / "scratch" / "tmpx1" / "QS"; junk.mkdir(parents=True)
-        (junk / "qs_boot.py").write_text("", encoding="utf-8"); (junk / "Rate_History_v9.xlsx").write_bytes(b"x")
+    def test_where_never_uses_archive_or_download_copies(self):
+        """Old ratebase / Rate_History copies under home (Downloads, ARCHIVE, Telegram, temp) are ignored."""
+        for d in ("Downloads/ARCHIVE/mahareka qs agent v1.4", "Downloads/Telegram Desktop",
+                  ".hermes/profiles/a/cache/scratch/tmpx1/QS"):
+            p = self.home / d; p.mkdir(parents=True)
+            (p / "qs_boot.py").write_text("", encoding="utf-8"); (p / "Rate_History.xlsx").write_bytes(b"x")
         w = self.where()
-        self.assertEqual(w["knowledge"], str(deep)); self.assertEqual(w["knowledge_found_by"], "search")
-        self.assertEqual(w["rate_history"], str(self.home / "Documents" / "QS" / "Rate_History_v3.xlsx"))
-        self.assertEqual(w["rate_history_found_by"], "search")
+        self.assertEqual(w["knowledge"], str(self.home / "mahareka-knowledge"))
+        self.assertIsNone(w["qs_boot"]); self.assertIsNone(w["rate_history"])
+        named = self.home / "Downloads" / "ARCHIVE" / "mahareka qs agent v1.4" / "Rate_History.xlsx"
+        w = self.where(MAHAREKA_RATE_HISTORY=str(named))          # only when Zaim names it
+        self.assertEqual((w["rate_history"], w["rate_history_found_by"]), (str(named), "env"))
 
     def install(self, skills, **extra):
         # the installer must use this Python (it has openpyxl); python3 on PATH may be a Hermes venv without it
