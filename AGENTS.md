@@ -21,7 +21,7 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 |---|---|---|
 | `mahareka-skill-builder` | 2.0 | Shelves (Type B) |
 | `bq-error-checker` | 2.0 | ICM Pipeline, 4 stages (ICM pilot) |
-| `chief-of-staff` | 1.3 | Shelves (Type B): routes work to the Virtual Office staff; asks the machine that holds a skill; searches a desk's archive |
+| `chief-of-staff` | 1.4 | Shelves (Type B): routes work to the Virtual Office staff; asks the machine that holds a skill; searches a desk's archive |
 
 ## Route by task
 
