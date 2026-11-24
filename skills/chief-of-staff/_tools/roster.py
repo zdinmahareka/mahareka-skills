@@ -6,6 +6,7 @@ agent (the folder whose INDEX.md starts "# Shared wiki (from Zaim"). Read-only.
 Usage: python roster.py --list                 names, roles and desks
        python roster.py --staff hakim          how to use + that staff member's card
        python roster.py --staff "commercial"   also matches a desk or role
+       python roster.py --staff pm             a desk code (the card's "Kod meja" line)
        python roster.py --path                 where the roster is
 Standard library only. $MAHAREKA_ROSTER names the file directly.
 """
@@ -50,7 +51,8 @@ def main():
         for h, _ in cards: print("- " + h)
         return
     want = a.staff.strip().lower()
-    hit = [c for h, c in cards if want in h.lower()]
+    # a desk code (qs, pm, cos, ...) matches the card's own "Kod meja" line first; a name, role or desk matches the heading
+    hit = [c for h, c in cards if re.search(rf"(?mi)^- Kod meja:\s*{re.escape(want)}\s*$", c)] or [c for h, c in cards if want in h.lower()]
     if not hit: print(f"NO STAFF matches '{a.staff}'. Staff:"); [print("- " + h) for h, _ in cards]; sys.exit(3)
     how = re.search(r"(?ms)^## Cara guna\n.*?(?=^## )", intro)
     print((how.group(0).rstrip() + "\n\n" if how else "") + "\n\n".join(hit))
