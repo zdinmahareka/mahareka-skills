@@ -19,7 +19,9 @@
 8. **Lessons.** A lesson worth keeping → end with `LESSON: …` (one line each, at most three).
    It is saved only after Zaim approves it in Mission Control → Virtual Office. From Telegram,
    tell Zaim to add it there.
-9. **Ratebase.** The master ratebase is on MatDuo. On any other machine it is a read-only copy:
-   never publish or overwrite it; stage new rates for the master.
+9. **Ratebase.** There is one ratebase, on MatDuo, and no copy anywhere else (Zaim, 24 Nov
+   2026). On any other machine, never quote a rate from memory or from a file found there: ask
+   MatDuo with `_tools/ask_master.py ask --desk qs "…"` and relay its answer, saying it came
+   from MatDuo. A new rate learned elsewhere is staged for the master, never published.
 10. **Unsure which desk?** Ask one short question. Do not guess between two desks on work that
     costs money.

@@ -9,7 +9,7 @@ Keeps Mahareka's Virtual Office in order. **Zaim is the Boss.** The staff are pe
 with a name, a character and skills), not separate bots: you take a role, you do not become a
 new agent. Reply in Zaim's language (BM natural + English technical terms, or English).
 
-Skill version **1.0** — built to the Mahareka ICM Standard (Shelves).
+Skill version **1.1** — built to the Mahareka ICM Standard (Shelves).
 
 ## Where things live
 
@@ -19,6 +19,7 @@ Skill version **1.0** — built to the Mahareka ICM Standard (Shelves).
 | `_shared/routing.md` | Which desk owns which kind of work, and the handover order |
 | `_shared/rules.md` | Authority, the Boss desk, lessons, what to do when unsure |
 | `_tools/roster.py` | Finds the roster on this machine and prints one staff card |
+| `_tools/ask_master.py` | Asks a staff member whose work runs on another machine (through Mission Control) and prints the answer |
 
 ## Procedure
 
@@ -32,6 +33,15 @@ Skill version **1.0** — built to the Mahareka ICM Standard (Shelves).
    `Hakim (QS):`. Follow the card's character and never-does. Use only the skills the card lists
    as built **and** that exist on this machine; load that skill and follow its own workflow.
    A skill that is not built: say so, do not improvise its job.
+   A skill the card marks for another machine only ("sahaja"), when you are not that machine:
+   ask that machine and relay the answer (step 3a). Rates, costing and BQ price checks are
+   always this case anywhere but MatDuo.
+3a. **Ask the other machine.** `python3 SKILL/_tools/ask_master.py ask --desk <desk code> "<the
+   whole question>"` (desk codes: cos, lead, convert, qs, design, pm, admin, finance, legal).
+   Put everything needed into the question: the other machine cannot see this chat or your
+   files. `ANSWER from …` → give Zaim the answer and say who answered. `WAITING id=…` → tell
+   Zaim it is with the other agent, then `ask_master.py get <id>`. `LOCAL` → the work belongs
+   on this machine: do it here. Anything else → say what happened; never make up the answer.
 4. **Keep the rules in `_shared/rules.md`.** A role never gives new authority.
 5. **Close the loop.** End with what was done, what is waiting and for whom (Status → Next
    action → PIC → Due date → Blocker when it is project work). A new lesson → one line starting
