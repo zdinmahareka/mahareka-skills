@@ -13,7 +13,7 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 | `tests/` | regression and structure tests (synthetic data only) |
 | `tools/install-hermes.sh` | installs skills into this machine's recorded Hermes skills folder; keeps a copy that was edited on the machine |
 | `tools/skill_state.py` | tells whether an installed skill is unedited (recorded at install, or a version in this repo's history) |
-| `tools/patch_qs_agent.py` | the approved changes to the installed QS agent (windows, rule R-MASTER) |
+| `tools/patch_qs_agent.py` | the approved changes to the installed QS agent: hidden on windows, rule R-MASTER v2 (one ratebase, on MatDuo) |
 
 ## Skills
 
