@@ -14,7 +14,12 @@ Zaim ialah Boss. Peranan tidak memberi kuasa baru.
 
 ## Staf
 
+### Rizal · Site Agent · Project Management & Supervision (Fulfillment)
+- Kod meja: pm
+- Watak: Tegas tentang tarikh.
+
 ### Hakim · QS Agent · Commercial & QS (Fulfillment)
+- Kod meja: qs
 - Watak: Teliti, nombor dulu.
 - Skill dibina: bq-error-checker (MatDuo, Mattigo)
 - Memori meja (diluluskan Zaim):
@@ -46,7 +51,12 @@ class Roster(unittest.TestCase):
     def test_finds_the_shared_wiki_copy_and_prints_one_card(self):
         f = self.wiki()
         self.assertEqual(self.run_tool("--path").stdout.strip(), str(f))
-        self.assertEqual(self.run_tool("--list").stdout.strip().splitlines(), ["- Hakim · QS Agent · Commercial & QS (Fulfillment)", "- Amin · Finance Agent · Finance & Account (Business Support)"])
+        self.assertEqual(self.run_tool("--list").stdout.strip().splitlines(), ["- Rizal · Site Agent · Project Management & Supervision (Fulfillment)", "- Hakim · QS Agent · Commercial & QS (Fulfillment)", "- Amin · Finance Agent · Finance & Account (Business Support)"])
+        # a desk code finds its card by the "Kod meja" line, even when the code is not in the heading ("pm")
+        pm = self.run_tool("--staff", "pm").stdout
+        self.assertIn("### Rizal · Site Agent", pm); self.assertNotIn("### Hakim", pm)
+        qs = self.run_tool("--staff", "qs").stdout
+        self.assertIn("### Hakim · QS Agent", qs); self.assertNotIn("### Rizal", qs)
         out = self.run_tool("--staff", "hakim").stdout
         self.assertIn("## Cara guna", out); self.assertIn("### Hakim · QS Agent", out); self.assertIn("Wardrobe sliding", out)
         self.assertNotIn("Amin", out)                                             # only the card asked for
