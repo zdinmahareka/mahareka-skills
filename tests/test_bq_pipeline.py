@@ -177,6 +177,26 @@ class Pipeline(unittest.TestCase):
         self.assertIn("COMPARED: 3 | BAND FLAGS: 1 (+1 on weak evidence) | POSSIBLE MATCHES: 6 | NOT COMPARABLE: 2 | RATEBASE GAPS: 1", p.stdout)
         self.assertIn("[R02] WEAK EVIDENCE row 1", p.stdout)
 
+    def test_rate_check_ranks_by_the_main_words_and_sets_composite_works_apart(self):
+        """The second run on the real ratebase (26 Nov 2026): no wrong flag left, but candidates were ranked by late words and some lines sat in the wrong list."""
+        L = lambda row, desc, unit, rate, qty=1: {"row": row, "desc": desc, "unit": unit, "rate": rate, "qty": qty}
+        lines = [L(1, "Larder unit c/w swing door", "fr", 1500), L(2, "Foamboard sink carcass", "set", 300), L(3, "Backsplash, sintered stone 600mm height", "sqft", 130, 20),
+                 L(4, "Dismantle existing flooring and supply new SPC", "sqft", 12), L(5, "Dismantle window & close with brickwall", "set", 900),
+                 L(6, "Dismantle and dispose kitchen cabinet", "nos", 400), L(7, "Relocate plumbing", "nos", 350), L(8, "Supply and install sintered backsplash", "sqft", 104)]
+        fj, rj = self.tmp / "f.json", self.tmp / "r.json"; fj.write_text(json.dumps({"lines": lines}), encoding="utf-8")
+        run(SKILL / "_tools/rate_check.py", "--lines", fj, "--basis", "SELL", "--tool", self.know / "ratebase.py", "--json", rj)
+        out = json.loads(rj.read_text(encoding="utf-8")); maybe = {m["row"]: m for m in out["possible"]}
+        # the main words decide: a larder unit is looked up among larder units, not among cabinets that also have a swing door
+        self.assertEqual((maybe[1]["ratebase"]["id"], maybe[1]["ratebase"]["also"]), ("BIF-140", ["BIF-141"]), "and the same item at its other sizes is named")
+        self.assertEqual(maybe[2]["ratebase"]["id"], "BIF-016", "foamboard is foam board; the sink is the same sink"); self.assertIn("same main words", maybe[2]["why"])
+        # words that only say how big, and the order of the words, do not make it another item
+        self.assertEqual([(f["row"], f["ratebase"]["ids"], f["evidence"]) for f in out["flags"]], [(3, ["ST-007", "ST-008"], "strong")])
+        self.assertEqual(out["matched"], 2, "rows 3 and 8 are compared; row 8 is inside the band")
+        # taking out and putting in, in one rate, is no single rate; taking out and disposing is one work
+        self.assertEqual(sorted(n["row"] for n in out["not_comparable"]), [4, 5])
+        gaps = {g["row"]: g for g in out["gaps"]}
+        self.assertEqual(sorted(gaps), [6, 7]); self.assertIsNone(gaps[7]["near"], "a row that shares only the verb is not a near item")
+
     def test_run_folders_never_collide(self):
         again = run(SKILL / "_tools/new_run.py", "--project", "T050", "--root", self.tmp).stdout.strip()
         self.assertNotEqual(again, str(self.run_dir))
