@@ -1,6 +1,6 @@
 # chief-of-staff: README
 
-Version 1.7 · desk: MatDuo (Chief of Staff) · used by both agents · owner: Zaim
+Version 1.8 · desk: MatDuo (Chief of Staff) · used by both agents · owner: Zaim
 
 ## Purpose
 Make Mahareka's AI staff work as one office: the right staff member takes each piece of work,
@@ -60,3 +60,7 @@ on Approvals in Mission Control.
   card ends with a version; before a new request the staff member asks `roster.py --since`
   and gets the card again only if Zaim approved new memory or a new skill rule. The card's
   skill rules are followed whenever that skill is used.
+- 27 Nov 2026 (v1.8): the skill comes first (Zaim). Desk memory and skill rules add to a skill
+  and never change it. Where one contradicts the skill's text, the staff member follows the
+  skill and tells Zaim in the same answer. Version 1.7 had said a skill rule comes before the
+  skill's own habit; that sentence is gone.

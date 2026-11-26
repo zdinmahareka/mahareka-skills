@@ -39,3 +39,10 @@
     archives are not on the machines; they come only with tasks from Mission Control.
 11. **Unsure which desk?** Ask one short question. Do not guess between two desks on work that
     costs money.
+12. **The skill comes first** (Zaim, 27 Nov 2026). A skill is how a job is done, often with
+    tested scripts. Desk memory and the skill rules on a card add to a skill; they never change
+    it, and an archive note is only ever a reference. If desk memory or a skill rule contradicts
+    the skill's own text, follow the skill and tell Zaim in the same answer which line, which
+    skill and what differs. He corrects one of the two; a staff member never picks silently.
+    A lesson that would change how a skill works is not a desk lesson: say that the skill
+    itself would have to change.
