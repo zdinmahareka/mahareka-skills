@@ -35,10 +35,17 @@ Do NOT load: `_shared/reporting.md` (stage 04), the whole BQ again (use the line
    - `shift` set → one collective advisory ("request latest pricelist"); downgrade the
      individual band flags it explains.
    - each `R` flag: check the match before believing it (its `ratebase` block names the rows
-     it was compared with, whether they are VERIFIED, and whether they are stale).
-   - `gaps`: a rate the ratebase does not hold is a **ratebase gap**. A gap with a `near`
-     item may be the same thing worded differently: say so. List gaps for stage 04, never
-     store them here.
+     it was compared with, whether they are VERIFIED, and whether they are stale). A flag
+     with `evidence: weak` (one row, or none VERIFIED) is `DOWNGRADE` or `ASK`, never `KEEP`
+     on its own.
+   - `possible`: a likely ratebase row the script would not compare, each with its reason
+     (another variant, a size-dependent rate, a supplier price-list row, a more specific
+     item, another unit, a cost-only row). It is not a finding. Where it matters, confirm it
+     and compare through the engines above (pro-rata first for sizes) as a `J` row; say how
+     many were left unconfirmed.
+   - `not_comparable`: lump sums and composite lines. Give the count only.
+   - `gaps`: a rate the ratebase does not hold is a **ratebase gap**. List gaps for stage 04,
+     never store them here.
 5. Add judgment-only findings with new ids `J01…`: Layer B room-to-room consistency,
    Layer D margin (only with cost data), Layer E cross-reference (only with a drawing or
    quote), and in Mode 2 Layer G (cost drivers, scope gaps, quantity plausibility, VE,

@@ -20,7 +20,7 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 | Skill | Version | Shape |
 |---|---|---|
 | `mahareka-skill-builder` | 2.4 | Shelves (Type B); runs on Hermes: `scripts/sb_boot.py`, `new_skill.py`, `skill_check.py`, `icm_check.py`, `registry.py` |
-| `bq-error-checker` | 2.2 | ICM Pipeline, 4 stages (ICM pilot); one ratebase: it keeps no rate memory of its own and compares BQ rates with `QS_RATEBASE` read-only, through the QS agent's tool |
+| `bq-error-checker` | 2.3 | ICM Pipeline, 4 stages (ICM pilot); one ratebase: it keeps no rate memory of its own and compares BQ rates with `QS_RATEBASE` read-only, through the QS agent's tool |
 | `chief-of-staff` | 1.6 | Shelves (Type B): routes work to the Virtual Office staff; asks the machine that holds a skill; searches the desk archives as one linked web |
 
 Every skill ships a `README.md` for people (rule M11, gate G14; Zaim, 26 Nov 2026): headings

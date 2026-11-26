@@ -9,10 +9,10 @@ Audits a BQ or quotation and presents the findings as a QS would to the Commerci
 **User = Zaim, Commercial Director, Mahareka Construction. All amounts MYR. Reply in the user's
 language (natural BM + English technical terms, or English). Output-first, no filler.**
 
-Skill version **2.2** — built to the Mahareka ICM Standard (v2.0: rules, taxonomy and report
+Skill version **2.3** — built to the Mahareka ICM Standard (v2.0: rules, taxonomy and report
 formats moved to `_shared/`, the workflow into four checked stages). v2.1 (Zaim, 26 Nov 2026):
 one ratebase; this skill keeps no rate memory of its own. v2.2: `rate_check.py` compares
-every priced line with `QS_RATEBASE`, read-only, through its owner's tool.
+every priced line with `QS_RATEBASE`, read-only, through its owner's tool (v2.3: tuned on the real ratebase).
 
 ## Where things live
 

@@ -1,6 +1,6 @@
 # bq-error-checker: README
 
-Version 2.2 · desk: Hakim (Commercial & QS) · Hermes agents only · owner: Zaim
+Version 2.3 · desk: Hakim (Commercial & QS) · Hermes agents only · owner: Zaim
 
 ## Purpose
 Check a BQ, BOQ, quotation, subcon quote or costing sheet before it goes out or gets accepted,
@@ -23,7 +23,9 @@ a subcon damages the relationship. The check has to be the same every time, judg
 not impressions, and never let an unreviewed flag reach Zaim. Version 2.0 put the work into
 four checked stages so that each step can be seen and repeated. Version 2.1 retired the skill's
 own rate history, so there is one ratebase and no second set of rates growing beside it.
-Version 2.2 brought the automatic rate comparison back, reading that one ratebase.
+Version 2.2 brought the automatic rate comparison back, reading that one ratebase. Version 2.3
+tuned it after the first run on the real ratebase: it compares only what is surely the same
+item, and returns the rest as "possible matches" to confirm instead of flagging them.
 
 ## When it runs
 - When Zaim sends a BQ or quotation (xlsx or PDF) and asks to check, review, audit, verify or
