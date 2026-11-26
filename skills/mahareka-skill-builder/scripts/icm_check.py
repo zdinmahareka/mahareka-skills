@@ -9,6 +9,7 @@ Complements skill_check.py (the 11 principles); it does not replace it.
 import re, sys
 from pathlib import Path
 
+__version__ = "2.2"
 TOKEN_BUDGET = 8000          # M6, approximated as characters / 4
 ENTRY_LINES = 60             # M1, pipeline skills only
 PATH_RE = re.compile(r"`(?:SKILL/)?((?:_shared|_templates|_tools|stages|references|assets|scripts)/[^`\s]+)`")
@@ -24,6 +25,17 @@ def section(text, name):
     m = re.search(rf"^## {name}\s*$(.*?)(?=^## |\Z)", text, re.S | re.M)
     return m.group(1) if m else None
 
+def readme_findings(skill):
+    """M11: the page for people. [(level, message)] for one skill folder."""
+    out, readme = [], Path(skill) / "README.md"
+    if not readme.is_file():
+        return [("BLOCKER", "M11: no README.md (the page for people: Purpose, What, Why, When, How)")]
+    heads = [h.strip() for h in re.findall(r"^##\s+(.+?)\s*$", readme.read_text(encoding="utf-8", errors="replace"), re.M)]
+    has = lambda name: any(re.match(rf"{re.escape(name)}\b", h, re.I) for h in heads)
+    out += [("BLOCKER", f"M11: README.md has no '## {name} ...' section") for name in README_MUST if not has(name)]
+    out += [("WARN", f"M11: README.md has no '## {name}' section") for name in README_SHOULD if not has(name)]
+    return out
+
 def check(skill):
     out = []
     add = lambda level, msg: out.append((level, msg))
@@ -33,17 +45,7 @@ def check(skill):
     fm, body = frontmatter(entry.read_text(encoding="utf-8"))
     if not re.search(r"^name:\s*\S", fm, re.M): add("BLOCKER", "SKILL.md frontmatter has no name")
     if not re.search(r"^description:\s*\S", fm, re.M): add("BLOCKER", "SKILL.md frontmatter has no description")
-    # M11: the page for people. Every shape has one.
-    readme = skill / "README.md"
-    if not readme.is_file():
-        add("BLOCKER", "M11: no README.md (the page for people: Purpose, What, Why, When, How)")
-    else:
-        heads = [h.strip() for h in re.findall(r"^##\s+(.+?)\s*$", readme.read_text(encoding="utf-8", errors="replace"), re.M)]
-        has = lambda name: any(re.match(rf"{re.escape(name)}\b", h, re.I) for h in heads)
-        for name in README_MUST:
-            if not has(name): add("BLOCKER", f"M11: README.md has no '## {name} ...' section")
-        for name in README_SHOULD:
-            if not has(name): add("WARN", f"M11: README.md has no '## {name}' section")
+    out += readme_findings(skill)
     for extra in skill.rglob("SKILL.md"):
         if extra != entry:
             add("BLOCKER", f"M9: second SKILL.md at {extra.relative_to(skill)} (counted as a skill by Hermes and Mission Control; name it SKILL.entry.md)")
