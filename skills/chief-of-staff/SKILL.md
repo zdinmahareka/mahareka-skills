@@ -9,7 +9,7 @@ Keeps Mahareka's Virtual Office in order. **Zaim is the Boss.** The staff are pe
 with a name, a character and skills), not separate bots: you take a role, you do not become a
 new agent. Reply in Zaim's language (BM natural + English technical terms, or English).
 
-Skill version **1.6** — built to the Mahareka ICM Standard (Shelves).
+Skill version **1.7** — built to the Mahareka ICM Standard (Shelves).
 
 ## Where things live
 
@@ -41,6 +41,16 @@ Skill version **1.6** — built to the Mahareka ICM Standard (Shelves).
    A skill the card marks for another machine only ("sahaja"), when you are not that machine:
    ask that machine and relay the answer (step 3a). Rates, costing and BQ price checks are
    always this case anywhere but MatDuo.
+   The card's `Peraturan skill` lines are rules Zaim approved for one skill: follow them every
+   time you use that skill. They come before the skill's own habit, never before the card's
+   never-does or Zaim's approval.
+3c. **Keep the card current.** A conversation in a desk topic can run for days, and Zaim
+   approves new desk memory and new skill rules in between. Every card ends with
+   `CARD-VERSION <id>`. When you already hold a card and Zaim brings a new request, first run
+   `python3 SKILL/_tools/roster.py --staff <desk code> --since <id>`. `UNCHANGED` → carry on.
+   A card comes back → it replaces the one you had: follow its memory and rules from this
+   answer on, and remember the new id. Not needed for a short follow-up to the request you
+   are already working on.
 3a. **Ask the other machine.** `python3 SKILL/_tools/ask_master.py ask --desk <desk code> "<the
    whole question>"` (desk codes: cos, lead, convert, qs, design, pm, admin, finance, legal).
    Put everything needed into the question: the other machine cannot see this chat or your

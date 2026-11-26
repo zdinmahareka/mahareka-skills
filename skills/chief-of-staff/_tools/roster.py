@@ -7,10 +7,14 @@ Usage: python roster.py --list                 names, roles and desks
        python roster.py --staff hakim          how to use + that staff member's card
        python roster.py --staff "commercial"   also matches a desk or role
        python roster.py --staff pm             a desk code (the card's "Kod meja" line)
+       python roster.py --staff pm --since ab12cd34ef56
+                                               the card again only if it changed since that version
        python roster.py --path                 where the roster is
+Every card ends with "CARD-VERSION <id>": a fingerprint of what was printed. A conversation that
+already holds a card asks with --since <id>; "UNCHANGED" means the card it holds is still right.
 Standard library only. $MAHAREKA_ROSTER names the file directly.
 """
-import argparse, os, re, sys
+import argparse, hashlib, os, re, sys
 from pathlib import Path
 
 SKIP = {"node_modules", "__pycache__", "venv", ".venv", "venvs", "site-packages", "mc-backups", "cache", "scratch", "sessions", "logs"}
@@ -42,6 +46,7 @@ def sections(text):
 def main():
     if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")
     ap = argparse.ArgumentParser(); ap.add_argument("--list", action="store_true"); ap.add_argument("--staff"); ap.add_argument("--path", action="store_true")
+    ap.add_argument("--since", help="a CARD-VERSION read earlier: print the card only if it changed")
     a = ap.parse_args()
     f = find_roster()
     if not f: print("NO ROSTER: office/roster.md is not in a shared wiki folder on this machine yet."); sys.exit(2)
@@ -55,7 +60,12 @@ def main():
     hit = [c for h, c in cards if re.search(rf"(?mi)^- Kod meja:\s*{re.escape(want)}\s*$", c)] or [c for h, c in cards if want in h.lower()]
     if not hit: print(f"NO STAFF matches '{a.staff}'. Staff:"); [print("- " + h) for h, _ in cards]; sys.exit(3)
     how = re.search(r"(?ms)^## Cara guna\n.*?(?=^## )", intro)
-    print((how.group(0).rstrip() + "\n\n" if how else "") + "\n\n".join(hit))
+    card = (how.group(0).rstrip() + "\n\n" if how else "") + "\n\n".join(hit)
+    version = hashlib.sha256(card.encode("utf-8")).hexdigest()[:12]
+    if a.since and a.since.strip().lower() == version:
+        print(f"UNCHANGED {version}: the card you hold is still right."); return
+    if a.since: print("CARD CHANGED: this card replaces the one you read before. Follow it from this answer on.\n")
+    print(card + f"\n\nCARD-VERSION {version}")
 
 if __name__ == "__main__":
     main()
