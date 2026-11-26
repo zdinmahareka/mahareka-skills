@@ -1,6 +1,6 @@
 # mahareka-skill-builder: README
 
-Version 2.2 · desk: MatDuo (Chief of Staff) · Hermes agents only · owner: Zaim
+Version 2.3 · desk: MatDuo (Chief of Staff) · Hermes agents only · owner: Zaim
 
 ## Purpose
 Build new Mahareka skills to one house standard, and audit the ones that exist, so every skill
@@ -60,6 +60,9 @@ that file in the KNOWLEDGE folder when you accept it.
   KNOWLEDGE folder: `MAHAREKA_STANDARD.md` and `SKILL_REGISTRY.xlsx`. The old copies there
   (`sb_boot.py`, `skill_check.py`, `skill_scaffold.py`, written for Claude Projects) are no
   longer used.
+- Two lessons that Hermes wrote into MatDuo's copy were merged into the skill in 2.3: do not
+  convert a working skill to ICM for the shape alone, and triage `skill_check.py` findings
+  (some of its blockers are noise on Hermes) before reporting them.
 - `skill_check.py` names the owner of a shared rule and never restates its value. Its 11
   principles were moved over unchanged; only the paths and the wording for Hermes changed.
 - The source is the `mahareka-skills` repo. Tests: `tests/test_icm_check.py`,
