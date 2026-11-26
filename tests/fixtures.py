@@ -39,3 +39,48 @@ def make_knowledge(folder):
     wb["PATTERNS"].append(["P1", "Two layers", "x", "x", "x", "x"]); wb["GATES"].append(["G1", "archetype justified", "all", "read"])
     wb.save(folder / "SKILL_REGISTRY.xlsx")
     (folder / "MAHAREKA_STANDARD.md").write_text("# Mahareka standard (synthetic stand-in)\n", encoding="utf-8")
+
+RATEBASE_HEADERS = ["ID", "ITEM", "SPEC/NOTE", "UOM", "MATERIAL", "LABOUR", "EQUIPMENT", "OTHER", "SUBCON", "ALL-IN", "MARKUP", "SELL", "VENDOR/SOURCE", "PROJECT", "DATE", "STATUS"]
+# A stand-in for mahareka-qs-agent's ratebase.py: the same public functions (open_rb, rate_tabs,
+# rows, freshness) over a synthetic workbook. The real tool is never copied into this repo.
+RATEBASE_STANDIN = '''"""Stand-in for the QS agent's ratebase.py (tests only): same public functions, synthetic rates."""
+import glob, os, sys
+from openpyxl import load_workbook
+__version__ = "test"
+HERE = os.path.dirname(os.path.abspath(__file__))
+def open_rb(path=None):
+    hits = sorted(glob.glob(os.path.join(HERE, "QS_RATEBASE*.xlsx")))
+    if not hits: sys.exit("No QS_RATEBASE*.xlsx found in: " + HERE)
+    print("WARNING: synthetic ratebase (tests)")
+    return load_workbook(hits[-1]), hits[-1]
+def rate_tabs(wb): return [s for s in wb.sheetnames if s != "README"]
+def rows(ws):
+    hdr = [c.value for c in ws[3]]
+    for r in ws.iter_rows(min_row=4, values_only=True):
+        if r[0] is None and r[1] is None: continue
+        d = dict(zip(hdr, r))
+        if d.get("SELL") is None and d.get("ALL-IN") and d.get("MARKUP"): d["SELL"] = d["ALL-IN"] * d["MARKUP"]   # the owner computes sell
+        yield d
+def freshness(r):
+    old = r.get("ID") == "BIF-003"
+    return None, (400 if old else 10), ("STALE" if old else "FRESH")
+'''
+
+def make_ratebase(folder, tool=RATEBASE_STANDIN):
+    """A synthetic KNOWLEDGE folder for the rate authority: qs_boot.py, the stand-in ratebase.py and a small QS_RATEBASE."""
+    wb = Workbook(); ws = wb.active; ws.title = "BIF"
+    ws.append(["BUILT-IN FURNITURE (synthetic)"]); ws.append([]); ws.append(RATEBASE_HEADERS)
+    for rid, item, allin, markup, sell, status in [
+        ("BIF-001", "Base unit E1 melamine carcass", None, None, 290, "VERIFIED"),
+        ("BIF-002", "Base unit E1 melamine carcass", None, None, 300, "VERIFIED"),
+        ("BIF-003", "Wardrobe swing door E1", None, None, 520, "VERIFIED"),
+        ("BIF-004", "Wardrobe swing door E1", None, None, 540, "VERIFIED"),
+        ("BIF-005", "Wardrobe swing door E1", None, None, 900, "SUPERSEDED"),          # kept forever, never compared
+        ("BIF-006", "Wall unit E1 melamine", 200, 1.5, None, "VERIFIED"),              # sell comes from the owner's tool
+        ("BIF-007", "Shoe cabinet E1", None, None, 440, "PENDING"),
+    ]:
+        ws.append([rid, item, "E1", "fr", None, None, None, None, allin, allin, markup, sell, "SMC", "T001", "2026-06-01", status])
+    wb.create_sheet("README").append(["RB v9.9 | synthetic"])
+    wb.save(folder / "QS_RATEBASE_v9.9_20260101.xlsx")
+    (folder / "ratebase.py").write_text(tool, encoding="utf-8")
+    (folder / "qs_boot.py").write_text("print('QS BOOT: INTACT')\n", encoding="utf-8")

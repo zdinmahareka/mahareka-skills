@@ -48,11 +48,20 @@ def g02(run):
     if data.get("info", {}).get("sheet") != sheet:
         return f"findings.json checked sheet '{data.get('info', {}).get('sheet')}', intake says '{sheet}'"
     if any("id" not in f for f in data.get("findings", [])): return "findings without ids: rerun check_bq.py v2.0"
+    # Layer F: the rate check must have run. A check that could not read the ratebase still
+    # writes rates.json with an "error", which stage 03 raises as an ASK; silence is what fails.
+    rj = d / "rates.json"
+    if not rj.is_file(): return "rates.json missing: run rate_check.py (it writes the file even when the ratebase cannot be read)"
+    try: json.loads(rj.read_text(encoding="utf-8", errors="replace"))
+    except ValueError: return "rates.json not valid JSON"
     return None
 
 def ids_from_02(run):
     d = run / "02_checks"
-    return [f["id"] for f in json.loads((d / "findings.json").read_text(encoding="utf-8", errors="replace")).get("findings", [])]
+    ids = [f["id"] for f in json.loads((d / "findings.json").read_text(encoding="utf-8", errors="replace")).get("findings", [])]
+    if (d / "rates.json").exists():
+        ids += [f["id"] for f in json.loads((d / "rates.json").read_text(encoding="utf-8", errors="replace")).get("flags", [])]
+    return ids
 
 def g03(run):
     p = run / "03_review" / "review.md"

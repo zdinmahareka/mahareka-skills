@@ -1,6 +1,6 @@
 # bq-error-checker: README
 
-Version 2.1 · desk: Hakim (Commercial & QS) · Hermes agents only · owner: Zaim
+Version 2.2 · desk: Hakim (Commercial & QS) · Hermes agents only · owner: Zaim
 
 ## Purpose
 Check a BQ, BOQ, quotation, subcon quote or costing sheet before it goes out or gets accepted,
@@ -23,6 +23,7 @@ a subcon damages the relationship. The check has to be the same every time, judg
 not impressions, and never let an unreviewed flag reach Zaim. Version 2.0 put the work into
 four checked stages so that each step can be seen and repeated. Version 2.1 retired the skill's
 own rate history, so there is one ratebase and no second set of rates growing beside it.
+Version 2.2 brought the automatic rate comparison back, reading that one ratebase.
 
 ## When it runs
 - When Zaim sends a BQ or quotation (xlsx or PDF) and asks to check, review, audit, verify or
@@ -38,9 +39,9 @@ own rate history, so there is one ratebase and no second set of rates growing be
    there untouched.
 3. Four stages, each with a contract in `stages/NN_*/CONTEXT.md` and a gate (`_tools/gate.py`):
    **01 intake** (pick the sheet, set mode and depth, ask every question once) → **02 checks**
-   (bootstrap the rate authority, then the scripts) → **03 review** (every finding gets a
-   decision; rates are compared against the ratebase) → **04 report** (the report, and the
-   list of rates for the ratebase).
+   (bootstrap the rate authority, then the scripts, including `rate_check.py`, which compares
+   every priced line with the ratebase) → **03 review** (every finding gets a decision) →
+   **04 report** (the report, and the list of rates for the ratebase).
 4. A failed gate stops the run. Status is whatever is on disk in the run folder.
 
 ## Using it (Zaim)
@@ -55,8 +56,11 @@ Hakim which ones to store: they go into the ratebase through `mahareka-qs-agent`
 - Conflicts with other skills are declared in `_shared/conflicts.md`. Two were resolved in
   2.1 on Zaim's decision (the second rate memory, the old rounding rule); the rest stay
   declared until he approves a fix. They are never fixed as a side effect.
+- `rate_check.py` reads the ratebase only through the QS agent's own `ratebase.py`
+  (`open_rb`, `rate_tabs`, `rows`). If that tool changes those names, the check stops and says
+  so; it never falls back to opening the workbook itself.
 - The source is the `mahareka-skills` repo. Tests: `tests/test_bq_pipeline.py` (a full run on a
-  synthetic BQ), `tests/test_rules_kept.py` (safety lines that must never be dropped) and
+  synthetic BQ and a synthetic ratebase), `tests/test_rules_kept.py` (safety lines that must never be dropped) and
   `icm_check.py`.
 - Changing a rule needs Zaim's approval and a version bump. Keep `name:` and the description
   stable so a new version installs over the old one.

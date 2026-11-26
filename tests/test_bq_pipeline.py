@@ -5,7 +5,8 @@ from pathlib import Path
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
 
 sys.path.insert(0, str(Path(__file__).parent))
-from fixtures import make_bq
+import hashlib
+from fixtures import make_bq, make_ratebase, RATEBASE_STANDIN
 
 SKILL = Path(__file__).resolve().parents[1] / "skills" / "bq-error-checker"
 PY = sys.executable
@@ -27,6 +28,8 @@ class Pipeline(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.bq = self.tmp / "test_bq.xlsx"
         make_bq(self.bq)
+        self.know = self.tmp / "knowledge"; self.know.mkdir(); make_ratebase(self.know)
+        self.book = next(self.know.glob("QS_RATEBASE*.xlsx"))
         out = run(SKILL / "_tools/new_run.py", "--project", "T050", "--input", self.bq, "--root", self.tmp)
         self.run_dir = Path(out.stdout.strip())
 
@@ -55,9 +58,17 @@ class Pipeline(unittest.TestCase):
             "--json", r / "02_checks/findings.json")
         self.assertIn("DEGRADED", self.gate("02", ok=False).stdout)
         (r / "02_checks" / "boot.txt").write_text("QS BOOT: INTACT\n", encoding="utf-8")
+        # Layer F must have run: without rates.json the gate stops
+        self.assertIn("rates.json missing", self.gate("02", ok=False).stdout)
+        before = hashlib.sha256(self.book.read_bytes()).hexdigest()
+        out = run(SKILL / "_tools/rate_check.py", "--lines", r / "02_checks/findings.json", "--basis", "SELL", "--subcon", "SMC",
+                  "--project", "T050", "--tool", self.know / "ratebase.py", "--json", r / "02_checks/rates.json")
+        self.assertIn("RATEBASE QS_RATEBASE_v9.9_20260101.xlsx via ratebase.py vtest", out.stdout)
         self.gate("02")
-        # one ratebase (v2.1): stage 02 leaves no rate file of its own behind, and nothing is written for a second memory
-        self.assertEqual(sorted(p.name for p in (r / "02_checks").iterdir()), ["boot.txt", "check.md", "findings.json"])
+        # one ratebase: read-only, nothing written beside it, no workbook of the skill's own
+        self.assertEqual(hashlib.sha256(self.book.read_bytes()).hexdigest(), before, "the ratebase is never written")
+        self.assertEqual(sorted(p.name for p in self.know.iterdir()), ["QS_RATEBASE_v9.9_20260101.xlsx", "qs_boot.py", "ratebase.py"], "not even a cache file is left in the owner's folder")
+        self.assertEqual(sorted(p.name for p in (r / "02_checks").iterdir()), ["boot.txt", "check.md", "findings.json", "rates.json"])
         self.assertEqual([p.name for p in (r / "04_report").iterdir() if p.suffix == ".xlsx"], [])
 
         # the regression answers (G10)
@@ -70,21 +81,27 @@ class Pipeline(unittest.TestCase):
         self.assertFalse(any(x["row"] == 9 for x in f), "lesson 14: 'not included' must not be flagged")
         self.assertEqual([x["id"] for x in f], [f"F{i:02d}" for i in range(1, len(f) + 1)])
 
+        # Layer F against the one ratebase
+        rates = json.loads((r / "02_checks/rates.json").read_text(encoding="utf-8"))
+        self.assertIsNone(rates["error"]); self.assertEqual(rates["source"]["file"], "QS_RATEBASE_v9.9_20260101.xlsx")
+        wardrobe = [x for x in rates["flags"] if x["row"] == 7]
+        self.assertTrue(wardrobe and wardrobe[0]["dev_pct"] > 15, rates)                  # 690 vs median 530
+        self.assertEqual(wardrobe[0]["median"], 530, "the SUPERSEDED 900 is never compared")
+        self.assertEqual((wardrobe[0]["ratebase"]["against"], wardrobe[0]["ratebase"]["n"], wardrobe[0]["ratebase"]["ids"]), ("VERIFIED", 2, ["BIF-003", "BIF-004"]))
+        self.assertEqual(wardrobe[0]["ratebase"]["stale_days"], 400, "a stale ratebase rate is said so")
+        self.assertFalse(any(x["row"] in (4, 5, 8) for x in rates["flags"]), "290 vs 295, 310 vs the owner's 300, 450 vs 440: inside the band")
+        self.assertTrue(any("Feature wall paint" in g["desc"] for g in rates["gaps"]), "what the ratebase does not hold is a gap, not a flag")
+        self.assertEqual([x["id"] for x in rates["flags"]], [f"R{i:02d}" for i in range(1, len(rates["flags"]) + 1)])
+
         # 03: every id needs a decision
         review = r / "03_review" / "review.md"
-        ids = [x["id"] for x in f]
+        ids = [x["id"] for x in f] + [x["id"] for x in rates["flags"]]
         rows = "".join(f"| {i} | - | - | KEEP | - |\n" for i in ids[:-1])
         review.write_text(review.read_text(encoding="utf-8").replace("|---|---|---|---|---|\n", "|---|---|---|---|---|\n" + rows), encoding="utf-8")
         self.assertIn(ids[-1], self.gate("03", ok=False).stdout)
         review.write_text(review.read_text(encoding="utf-8").replace(rows, rows + f"| {ids[-1]} | - | - | MAYBE | - |\n"), encoding="utf-8")
         self.assertIn("decision must be", self.gate("03", ok=False).stdout)
         review.write_text(review.read_text(encoding="utf-8").replace("MAYBE", "DROP"), encoding="utf-8")
-        self.gate("03")
-        # a rate finding is made in the review itself (R ids, against the one ratebase) and needs a valid decision too
-        text = review.read_text(encoding="utf-8")
-        review.write_text(text.replace(rows, rows + "| R01 | 7 | wardrobe rate above the ratebase band | LATER | - |\n"), encoding="utf-8")
-        self.assertIn("decision must be", self.gate("03", ok=False).stdout)
-        review.write_text(review.read_text(encoding="utf-8").replace("LATER", "KEEP"), encoding="utf-8")
         self.gate("03")
 
         status = run(SKILL / "_tools/gate.py", r, "status").stdout
@@ -96,12 +113,41 @@ class Pipeline(unittest.TestCase):
         """v2.1 (Zaim, 26 Nov 2026): the skill reads QS_RATEBASE through its owner and keeps no rate memory of its own."""
         self.assertFalse((SKILL / "_tools" / "rate_learn.py").exists())
         text = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in SKILL.rglob("*") if p.is_file() and p.suffix in (".md", ".py"))
-        for gone in ("Rate_History", "rate_learn", "rates.json", "MAHAREKA_RATE_HISTORY", "nearest RM5", "MROUND"):
-            self.assertNotIn(gone, text, f"{gone} belongs to the retired second memory or the retired rounding rule")
+        for gone in ("Rate_History", "rate_learn", "MAHAREKA_RATE_HISTORY", "nearest RM5", "MROUND", "load_workbook", ".save("):
+            self.assertNotIn(gone, text.replace((SKILL / "_tools" / "check_bq.py").read_text(encoding="utf-8"), ""), f"{gone}: the skill keeps no rate workbook, opens none itself, and restates no owned rule")
         self.assertIn("rule R-ALL-42 (owned by `mahareka-qs-agent`", text, "the rounding rule is named by its owner, not restated")
         conflicts = (SKILL / "_shared" / "conflicts.md").read_text(encoding="utf-8")
         self.assertEqual(conflicts.count("RESOLVED in v2.1"), 2); self.assertIn('3. **"not included" annotation.**', conflicts); self.assertIn("Unresolved.", conflicts, "what was not decided stays declared")
         self.assertIn("**Always ask Zaim:**", (SKILL / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_rate_check_is_loud_when_the_ratebase_cannot_be_read(self):
+        fj, rj = self.tmp / "f.json", self.tmp / "r.json"
+        run(SKILL / "_tools/check_bq.py", self.bq, "--json", fj)
+        # no rate authority on this machine
+        p = run(SKILL / "_tools/rate_check.py", "--lines", fj, "--tool", self.tmp / "nowhere" / "ratebase.py", "--json", rj, ok=False)
+        self.assertIn("RATE CHECK DID NOT RUN", p.stdout); self.assertIn("Never price-check blind", p.stdout)
+        out = json.loads(rj.read_text(encoding="utf-8")); self.assertIn("ratebase.py not found", out["error"]); self.assertEqual((out["flags"], out["gaps"]), ([], []))
+        # the master workbook is missing: the owner's tool stops, and that is reported, not guessed around
+        self.book.unlink()
+        p = run(SKILL / "_tools/rate_check.py", "--lines", fj, "--tool", self.know / "ratebase.py", "--json", rj, ok=False)
+        self.assertIn("the ratebase could not be opened: No QS_RATEBASE*.xlsx found", json.loads(rj.read_text(encoding="utf-8"))["error"])
+        # a tool without the functions this check reads through: stop, never open the workbook directly
+        make_ratebase(self.know, tool="__version__ = '0.1'\ndef find(q): return []\n")
+        p = run(SKILL / "_tools/rate_check.py", "--lines", fj, "--tool", self.know / "ratebase.py", "--json", rj, ok=False)
+        self.assertIn("ratebase.py v0.1 has no open_rb, rate_tabs, rows()", json.loads(rj.read_text(encoding="utf-8"))["error"])
+
+    def test_rate_check_on_cost_basis_and_a_pricelist_shift(self):
+        # a subcon quote (COST) where every line moved up about 10%: one advisory, not seven accusations
+        lines = [{"row": 10 + i, "desc": "Wall unit E1 melamine", "unit": "fr", "rate": 222 + i, "qty": 2} for i in range(6)]
+        fj, rj = self.tmp / "f.json", self.tmp / "r.json"
+        fj.write_text(json.dumps({"lines": lines}), encoding="utf-8")
+        p = run(SKILL / "_tools/rate_check.py", "--lines", fj, "--basis", "COST", "--subcon", "SMC", "--tool", self.know / "ratebase.py", "--json", rj)
+        out = json.loads(rj.read_text(encoding="utf-8"))
+        self.assertEqual(out["matched"], 6); self.assertEqual(out["flags"], [], "about 11% is inside the 15% band")
+        self.assertEqual((out["shift"]["direction"], out["shift"]["affected"]), ("UP", 6)); self.assertIn("request latest pricelist from SMC", p.stdout)
+        # a tighter band, asked for by Zaim, flags them
+        run(SKILL / "_tools/rate_check.py", "--lines", fj, "--basis", "COST", "--band", "0.05", "--tool", self.know / "ratebase.py", "--json", rj)
+        self.assertEqual(len(json.loads(rj.read_text(encoding="utf-8"))["flags"]), 6)
 
     def test_run_folders_never_collide(self):
         again = run(SKILL / "_tools/new_run.py", "--project", "T050", "--root", self.tmp).stdout.strip()

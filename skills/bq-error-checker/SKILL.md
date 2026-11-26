@@ -9,9 +9,10 @@ Audits a BQ or quotation and presents the findings as a QS would to the Commerci
 **User = Zaim, Commercial Director, Mahareka Construction. All amounts MYR. Reply in the user's
 language (natural BM + English technical terms, or English). Output-first, no filler.**
 
-Skill version **2.1** — built to the Mahareka ICM Standard (v2.0: rules, taxonomy and report
+Skill version **2.2** — built to the Mahareka ICM Standard (v2.0: rules, taxonomy and report
 formats moved to `_shared/`, the workflow into four checked stages). v2.1 (Zaim, 26 Nov 2026):
-one ratebase. This skill keeps no rate memory of its own; the benchmark is `QS_RATEBASE` only.
+one ratebase; this skill keeps no rate memory of its own. v2.2: `rate_check.py` compares
+every priced line with `QS_RATEBASE`, read-only, through its owner's tool.
 
 ## Where things live
 
@@ -21,7 +22,7 @@ one ratebase. This skill keeps no rate memory of its own; the benchmark is `QS_R
 | `stages/NN_*/CONTEXT.md` | one contract per stage: inputs, process, outputs, check | rarely |
 | `_shared/` | the factory: taxonomy, conventions, lessons, learning, reporting, conflicts | on re-package |
 | `_templates/` | blank stamps: `run/` (a new audit) and `report-mode1.md` | rarely |
-| `_tools/` | `where.py`, `new_run.py`, `check_bq.py`, `gate.py` | on re-package |
+| `_tools/` | `where.py`, `new_run.py`, `check_bq.py`, `rate_check.py`, `gate.py` | on re-package |
 | **RUN** (outside the skill) | the product: one folder per audit, made by `new_run.py` | every audit |
 
 Rates are never in this skill. Never quote a rate from this skill's own files. Rates come
