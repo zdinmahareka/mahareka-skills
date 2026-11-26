@@ -4,8 +4,8 @@ Source: `BQ_Audit_Report_Presentation_Standard.md`, installed by Zaim 03 Sep 202
 Folded into this skill at v1.1. This file governs **Report Mode 2 (Commercial Audit)** only.
 
 This file does not carry rates. It carries **how findings are analysed and presented**.
-The rate benchmark comes from `QS_RATEBASE` via `mahareka-qs-agent` and from `Rate_History.xlsx`
-via Layer F. Never take a number from this file.
+The rate benchmark comes from `QS_RATEBASE` via `mahareka-qs-agent`, and from nowhere else
+(one ratebase: Zaim, 26 Nov 2026). Never take a number from this file.
 
 ```
 Rate & Cost Memory   → tells you WHAT the benchmark is

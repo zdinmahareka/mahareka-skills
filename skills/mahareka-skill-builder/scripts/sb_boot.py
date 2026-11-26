@@ -10,7 +10,7 @@ Two jobs:
 Usage:  PY scripts/sb_boot.py [--skills <folder>]      (PY = the Python recorded in ~/.mahareka/python)
 Exit 0 = INTACT.  Exit 1 = DEGRADED: report and STOP.
 """
-import argparse, sys
+import argparse, re, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -42,7 +42,8 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--skills"); a = ap.parse_args()
     know, how = _env.knowledge()
     print("Mahareka Skill Builder: bootstrap")
-    print(f"KNOWLEDGE: {know or '(not found)'}  [{how}]   builder tools v{__version__}")
+    m = re.search(r"Builder version \*\*([0-9.]+)\*\*", (_env.SKILL / "SKILL.md").read_text(encoding="utf-8", errors="replace")) if (_env.SKILL / "SKILL.md").is_file() else None
+    print(f"KNOWLEDGE: {know or '(not found)'}  [{how}]   skill-builder v{m.group(1) if m else '?'}")
     print("=" * 66)
     missing = []
 

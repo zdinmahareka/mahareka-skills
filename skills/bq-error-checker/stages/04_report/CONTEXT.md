@@ -1,7 +1,7 @@
 # 04_report — present it as a QS would to the Commercial Director
 
-One job: turn the reviewed findings into the report for the mode set at intake, and hand the
-rate memory back.
+One job: turn the reviewed findings into the report for the mode set at intake, and hand
+over what was learned.
 
 ## Inputs
 - Working (this run): `RUN/01_intake/intake.md` (mode, depth, project)
@@ -21,12 +21,11 @@ Do NOT load: `_shared/lessons.md`, `_shared/learning.md`, the raw BQ, other runs
 3. State every unresolved gate explicitly: **"Gate pending — [what's needed]."**
 4. Where a subcon needs to clarify, add a WhatsApp-ready question draft (draft only; Zaim
    sends).
-5. Memory handover, at the end of the report:
-   - present `RUN/04_report/Rate_History_updated.xlsx` and ask Zaim whether to copy it into
-     KNOWLEDGE over the old Rate_History (keep the old one beside it, dated); copy only on his
-     yes; give the counts (verified matches, new pending, flags, resolutions);
-   - if memory was absent, say so and ask Zaim to attach it next time; if its last entry is
-     over 30 days old, or a project gap shows, say so;
+5. Handover, at the end of the report. This skill stores no rate (one ratebase):
+   - list every **ratebase gap** and every rate that changed (item, spec, UOM, rate, basis,
+     vendor, project, date) under "For the ratebase", for `mahareka-qs-agent` to store as
+     pending on Zaim's word; give the counts (rates compared, gaps, flags, resolutions);
+   - list how each rate flag was resolved (confirmed error / false alarm / genuine change);
    - if Zaim corrected a flag or taught a rule, give the exact line to add to
      `_shared/lessons.md` at the next re-package;
    - if any rate or rule was added to `QS_RATEBASE`, end by telling Zaim to download the
@@ -35,7 +34,6 @@ Do NOT load: `_shared/lessons.md`, `_shared/learning.md`, the raw BQ, other runs
 
 ## Outputs
 - `report.md` → `RUN/04_report/`
-- `Rate_History_updated.xlsx` → `RUN/04_report/` (from stage 02)
 
 ## Check
 Zaim reads the report. His corrections are made in place in `report.md`, and any rule he

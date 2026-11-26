@@ -19,7 +19,7 @@ Sections integer (1, 2, 3…), sub-sections X.Y, items a) b) c) sequential — n
 PR Preliminaries → DM Demolition → ST Structure → WP Wall & Partition → CL Ceiling → FL Floor → WF Wall Finishes → DW Door/Window/Glass → EL Electrical → EV ELV/ICT → AC ACMV → PL Plumbing → SP Sanitary → FP Fire Protection → WT Waterproofing → CP Carpentry/BIF → LF Loose Furniture → KE Kitchen Specialist → MT Metal → FC Façade → SG Signage → TC T&C/Handover → PS Prov/PC Sums. (Grouping by PHASE or AREA is allowed as a wrapper.)
 
 ## Pricing rules
-- Cabinet/joinery (BIF): client sees ONE loaded composite rate per fr = carcass + door + 45° handle + end panel apportioned + surcharges. Sell = loaded cost × 1.5 (markup on cost), rounded nearest RM5. Never show accessory breakdown to client.
+- Cabinet/joinery (BIF): client sees ONE loaded composite rate per fr = carcass + door + 45° handle + end panel apportioned + surcharges. Sell = loaded cost × 1.5 (markup on cost), rounded by rule R-ALL-42 (owned by `mahareka-qs-agent`: read the value there, never restate it). Never show accessory breakdown to client.
 - Install-only items: markup is ZAIM'S DECISION every time — never assume.
 - Non-SMC-scope in BIF section (quartz/backsplash/solid surface): qty filled, Rate & Amount BLANK.
 - Known historical markup coefficients in the wild: 1.37, 1.4, 1.5 — only 1.5 is the confirmed BIF standard; if another coefficient appears, flag for unification, don't silently accept.

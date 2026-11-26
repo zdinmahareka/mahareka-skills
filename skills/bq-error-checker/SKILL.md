@@ -9,9 +9,9 @@ Audits a BQ or quotation and presents the findings as a QS would to the Commerci
 **User = Zaim, Commercial Director, Mahareka Construction. All amounts MYR. Reply in the user's
 language (natural BM + English technical terms, or English). Output-first, no filler.**
 
-Skill version **2.0** — rebuilt to the Mahareka ICM Standard (Interpretable Context
-Methodology). Rules, taxonomy and report formats are unchanged from v1.1; they moved to
-`_shared/` and the workflow moved into four checked stages.
+Skill version **2.1** — built to the Mahareka ICM Standard (v2.0: rules, taxonomy and report
+formats moved to `_shared/`, the workflow into four checked stages). v2.1 (Zaim, 26 Nov 2026):
+one ratebase. This skill keeps no rate memory of its own; the benchmark is `QS_RATEBASE` only.
 
 ## Where things live
 
@@ -21,15 +21,15 @@ Methodology). Rules, taxonomy and report formats are unchanged from v1.1; they m
 | `stages/NN_*/CONTEXT.md` | one contract per stage: inputs, process, outputs, check | rarely |
 | `_shared/` | the factory: taxonomy, conventions, lessons, learning, reporting, conflicts | on re-package |
 | `_templates/` | blank stamps: `run/` (a new audit) and `report-mode1.md` | rarely |
-| `_tools/` | `where.py`, `new_run.py`, `check_bq.py`, `rate_learn.py`, `gate.py` | on re-package |
+| `_tools/` | `where.py`, `new_run.py`, `check_bq.py`, `gate.py` | on re-package |
 | **RUN** (outside the skill) | the product: one folder per audit, made by `new_run.py` | every audit |
 
 Rates are never in this skill. Never quote a rate from this skill's own files. Rates come
-from memory, every time. `QS_RATEBASE` (owned by `mahareka-qs-agent`) and
-`Rate_History.xlsx` already live on this machine, in its KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`,
+from the one ratebase, every time: `QS_RATEBASE` (owned by `mahareka-qs-agent`), which
+already lives on this machine, in its KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`,
 else `~/mahareka-knowledge`, else the installed `mahareka-qs-agent` skill's `scripts/`; never an
 archive or download copy); runs go to RUNS (`$MAHAREKA_RUNS`, default `~/mahareka-runs`).
-`python SKILL/_tools/where.py` prints both, and **PY**: the Python to use for every other
+`python SKILL/_tools/where.py` prints them, and **PY**: the Python to use for every other
 command (it has openpyxl; any of `python3`, `py`, `python` runs where.py). Hermes agents only.
 
 ## Start here
@@ -51,11 +51,13 @@ command (it has openpyxl; any of `python3`, `py`, `python` runs where.py). Herme
 | What counts as an error | `_shared/taxonomy.md` |
 | Mahareka BQ rules (UOM, rounding, markup, grades) | `_shared/conventions.md` |
 | Known error patterns | `_shared/lessons.md` |
-| Rate memory protocol (Layer F) | `_shared/learning.md` |
+| Rate intelligence (Layer F) | `_shared/learning.md` |
 | Mode 2 report standard | `_shared/reporting.md` |
 | Known conflicts with other skills | `_shared/conflicts.md` |
 
 ## Boundaries
+
+**Decision authority.** Decide alone: which checks run, how a finding is ranked, and a `DROP` that names the rule clearing it. **Always ask Zaim:** anything marked `ASK` (margin, markup, cost basis), a changed band or rule, a declared conflict. Storing a rate is `mahareka-qs-agent`'s job, on Zaim's word. A draft to a subcon stays a draft: Zaim sends.
 
 Pricing and rate build-ups → `mahareka-qs-agent`. Site reports and programme →
 `site-lookahead-v2`. Building or auditing skills → `mahareka-skill-builder`. This skill

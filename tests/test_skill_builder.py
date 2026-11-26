@@ -128,12 +128,13 @@ class SkillCheck(Base):
         self.assertIn("a rule owned by mahareka-qs-agent", line); self.assertIn("rule R-ALL-42 (read the value from the owner; never restate it)", line)
         self.assertNotRegex(line.split("should be:")[1], r"\d+\s*-\s*\d+|0\.10|->", "the checker follows its own rule: no value of an owned rule")
 
-    def test_missing_readme_is_a_blocker_and_declared_conflicts_stay_declared(self):
+    def test_missing_readme_is_a_blocker_and_resolved_conflicts_are_gone(self):
         self.new("mahareka-diary-check", "A"); (self.skills / "mahareka" / "mahareka-diary-check" / "README.md").unlink()
         p = self.run_tool("skill_check.py", self.skills / "mahareka" / "mahareka-diary-check"); self.assertEqual(p.returncode, 1); self.assertIn("M11        no README.md", p.stdout)
-        # bq-error-checker's known conflicts are declared in its _shared/conflicts.md and still reported; nothing was quietly fixed.
-        p = self.run_tool("skill_check.py", ROOT / "skills" / "bq-error-checker"); self.assertEqual(p.returncode, 1)
-        self.assertIn("a second rate memory beside QS_RATEBASE.xlsx", p.stdout); self.assertIn("`_shared/conventions.md` carries a stale copy of a rule owned by mahareka-qs-agent", p.stdout)
+        # bq-error-checker v2.1: the second rate memory and the old rounding rule were removed on Zaim's decision (26 Nov 2026).
+        p = self.run_tool("skill_check.py", ROOT / "skills" / "bq-error-checker")
+        self.assertNotIn("CROSS", p.stdout, p.stdout); self.assertNotIn("P8", p.stdout, "it says what goes to Zaim")
+        self.assertNotIn("P8", self.run_tool("skill_check.py", ROOT / "skills" / "chief-of-staff").stdout)
         self.assertEqual(self.run_tool("skill_check.py", BUILDER).returncode, 0, "the builder follows every rule it enforces")
 
 class Registry(Base):

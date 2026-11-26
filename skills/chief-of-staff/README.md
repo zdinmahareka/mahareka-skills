@@ -1,6 +1,6 @@
 # chief-of-staff: README
 
-Version 1.5 · desk: MatDuo (Chief of Staff) · used by both agents · owner: Zaim
+Version 1.6 · desk: MatDuo (Chief of Staff) · used by both agents · owner: Zaim
 
 ## Purpose
 Make Mahareka's AI staff work as one office: the right staff member takes each piece of work,
