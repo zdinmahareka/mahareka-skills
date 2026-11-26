@@ -8,6 +8,7 @@ over what was learned.
 - Working (this run): `RUN/03_review/review.md` (only `KEEP`, `DOWNGRADE`, `ASK` and `J` rows
   are reported; `DROP` rows appear only as a count)
 - Working (this run): `RUN/02_checks/findings.json` (`info` block: lines, sections, total)
+- Working (this run): `RUN/02_checks/rates.json` (`gaps`, `matched`, `source`: for the handover)
 - Reference (Mode 1): `SKILL/_templates/report-mode1.md`
 - Reference (Mode 2): `SKILL/_shared/reporting.md`, read in full before writing
 
@@ -22,9 +23,10 @@ Do NOT load: `_shared/lessons.md`, `_shared/learning.md`, the raw BQ, other runs
 4. Where a subcon needs to clarify, add a WhatsApp-ready question draft (draft only; Zaim
    sends).
 5. Handover, at the end of the report. This skill stores no rate (one ratebase):
-   - list every **ratebase gap** and every rate that changed (item, spec, UOM, rate, basis,
-     vendor, project, date) under "For the ratebase", for `mahareka-qs-agent` to store as
-     pending on Zaim's word; give the counts (rates compared, gaps, flags, resolutions);
+   - list every **ratebase gap** from `rates.json` and every rate that changed (item, spec,
+     UOM, rate, basis, vendor, project, date) under "For the ratebase", for
+     `mahareka-qs-agent` to store as pending on Zaim's word; give the counts (rates compared,
+     gaps, flags, resolutions) and which ratebase file they were compared with;
    - list how each rate flag was resolved (confirmed error / false alarm / genuine change);
    - if Zaim corrected a flag or taught a rule, give the exact line to add to
      `_shared/lessons.md` at the next re-package;

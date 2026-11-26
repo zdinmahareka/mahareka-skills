@@ -3,7 +3,9 @@
 ## One ratebase (v2.1 — Zaim, 26 Nov 2026)
 The benchmark is `QS_RATEBASE`, owned by `mahareka-qs-agent`, and nothing else. This skill keeps
 no rate memory of its own: it reads rates through the owner's engines (`ratebase.py`,
-`bif_prorata.py`, `bur_calc.py`, run with PY from KNOWLEDGE) and it never writes one. A rate it
+`bif_prorata.py`, `bur_calc.py`, run with PY from KNOWLEDGE) and it never writes one. Stage 02
+runs `_tools/rate_check.py`, which loads `ratebase.py` and reads every live rate through it
+(SUPERSEDED rows are left out; a sell rate is the one the owner computed). A rate it
 learns in an audit is handed over in the report for `mahareka-qs-agent` to store.
 Until v2.0 this skill kept a second rate workbook of its own; that is retired.
 
@@ -16,7 +18,8 @@ Until v2.0 this skill kept a second rate workbook of its own; that is retired.
 1. Normalize BQ description → candidate item (strip dims, room names, brands to grade/spec)
 2. Match on item + UOM + BASIS; if grade differs, compare within-grade only
 3. For BIF with non-standard dims: pro-rate the standard rate BEFORE comparing (else every custom dim false-flags)
-4. No match = **ratebase gap** → list it for the handover, no flag
+4. No match = **ratebase gap** → list it for the handover, no flag. The script matches
+   conservatively (same UOM, close description): judge its near-misses, do not trust them blind
 
 ## Analysis rules
 - **Band:** compare vs median of `verified` rates, same BASIS. Outside ±15% (tunable via user instruction) → flag, ALWAYS with history context: item, last n rates, dates, projects, % deviation

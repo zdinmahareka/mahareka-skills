@@ -80,7 +80,8 @@ class HermesInstall(unittest.TestCase):
         p = self.install(skills, MAHAREKA_REPLACE="bq-error-checker")   # Zaim says replace it
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertEqual((old / "_local" / "lessons.md").read_text(encoding="utf-8"), "mine", "the machine's own notes are carried over")
-        self.assertIn("version **2.1**", (old / "SKILL.md").read_text(encoding="utf-8"))
+        # the installed copy is the repo's current one, whatever its version number is
+        self.assertEqual((old / "SKILL.md").read_text(encoding="utf-8"), (ROOT / "skills" / "bq-error-checker" / "SKILL.md").read_text(encoding="utf-8"))
         self.assertFalse((old / "references").exists(), "old files must not linger")
         self.assertTrue((skills / "mahareka" / "mahareka-skill-builder" / "SKILL.md").is_file())
         backups = list((self.home / "mc-backups" / "skills").glob("bq-error-checker-*"))

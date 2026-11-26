@@ -1,6 +1,6 @@
 # Error taxonomy — Layers A to G
 
-What counts as a finding, by layer. Scripts do A–C (`_tools/check_bq.py`); F is judgment against the one ratebase since v2.1; stage 03 applies the judgment in B, D, E and G. Unchanged from v1.1.
+What counts as a finding, by layer. Scripts do A–C and F (`_tools/check_bq.py`, `_tools/rate_check.py`; F compares against the one ratebase, read-only); stage 03 applies the judgment in B, D, E and G. Unchanged from v1.1.
 
 ### Layer A — Arithmetic (script)
 - Qty × Rate = Amount per line (tolerance RM1)
