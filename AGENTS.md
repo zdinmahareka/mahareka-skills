@@ -19,7 +19,7 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 
 | Skill | Version | Shape |
 |---|---|---|
-| `mahareka-skill-builder` | 2.1 | Shelves (Type B) |
+| `mahareka-skill-builder` | 2.2 | Shelves (Type B); runs on Hermes: `scripts/sb_boot.py`, `new_skill.py`, `skill_check.py`, `icm_check.py`, `registry.py` |
 | `bq-error-checker` | 2.0 | ICM Pipeline, 4 stages (ICM pilot) |
 | `chief-of-staff` | 1.5 | Shelves (Type B): routes work to the Virtual Office staff; asks the machine that holds a skill; searches the desk archives as one linked web |
 
@@ -31,7 +31,7 @@ fails a skill without it, and the installer runs that check. Starter: `assets/ic
 
 | Task | Go to |
 |---|---|
-| Build or audit a skill | `skills/mahareka-skill-builder/SKILL.md` |
+| Build or audit a skill | `skills/mahareka-skill-builder/SKILL.md` (bootstrap first: `scripts/sb_boot.py`) |
 | Reshape a skill to ICM | `skills/mahareka-skill-builder/references/icm-standard.md`, section 4 |
 | Test everything | `python3 -m unittest discover -s tests` |
 | Install on a Hermes machine | first time: `MAHAREKA_SET_DIR=1 bash tools/install-hermes.sh <skills dir>`; after that auto-update runs it |
