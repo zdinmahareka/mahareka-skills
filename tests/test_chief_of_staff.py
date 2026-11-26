@@ -1,5 +1,5 @@
 """chief-of-staff: roster.py finds the roster Mission Control publishes and prints one staff card."""
-import os, shutil, subprocess, sys, tempfile, unittest
+import os, re, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
@@ -63,6 +63,25 @@ class Roster(unittest.TestCase):
         self.assertIn("### Hakim", self.run_tool("--staff", "Commercial").stdout)   # a desk name works too
         p = self.run_tool("--staff", "nobody")
         self.assertEqual(p.returncode, 3); self.assertIn("- Hakim", p.stdout)
+
+    def test_a_card_carries_a_version_and_comes_again_only_when_it_changed(self):
+        f = self.wiki()
+        out = self.run_tool("--staff", "qs").stdout
+        m = re.search(r"\nCARD-VERSION ([0-9a-f]{12})\s*$", out)
+        self.assertTrue(m, "every card ends with its version")
+        same = self.run_tool("--staff", "qs", "--since", m.group(1))
+        self.assertEqual(same.returncode, 0); self.assertTrue(same.stdout.startswith(f"UNCHANGED {m.group(1)}")); self.assertNotIn("### Hakim", same.stdout)
+        # another desk's card changing is not this card changing
+        f.write_text(ROSTER.replace("- Watak: Amanah dan tepat.", "- Watak: Amanah, tepat dan ringkas."), encoding="utf-8")
+        self.assertTrue(self.run_tool("--staff", "qs", "--since", m.group(1)).stdout.startswith("UNCHANGED"))
+        # Zaim approved a new line of desk memory: the card comes back, marked as a replacement, with a new version
+        f.write_text(ROSTER.replace("### Hakim · QS Agent · Commercial & QS (Fulfillment)\n", "### Hakim · QS Agent · Commercial & QS (Fulfillment)\n- Peraturan skill (diluluskan Zaim; ikut setiap kali guna skill itu):\n  - [mahareka-qs-agent] Always cite the rate source.\n"), encoding="utf-8")
+        new = self.run_tool("--staff", "qs", "--since", m.group(1)).stdout
+        self.assertTrue(new.startswith("CARD CHANGED")); self.assertIn("Always cite the rate source.", new)
+        m2 = re.search(r"\nCARD-VERSION ([0-9a-f]{12})\s*$", new)
+        self.assertTrue(m2); self.assertNotEqual(m2.group(1), m.group(1))
+        self.assertTrue(self.run_tool("--staff", "qs", "--since", m2.group(1)).stdout.startswith("UNCHANGED"))
+        self.assertIn("CARD-VERSION", self.run_tool("--staff", "qs", "--since", "not-a-version").stdout)
 
     def test_ignores_a_roster_that_is_not_in_the_shared_wiki(self):
         self.wiki(rel="Downloads/ARCHIVE/old", index="# Some other notes\n")          # not Mission Control's folder

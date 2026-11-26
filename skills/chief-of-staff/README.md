@@ -1,6 +1,6 @@
 # chief-of-staff: README
 
-Version 1.6 · desk: MatDuo (Chief of Staff) · used by both agents · owner: Zaim
+Version 1.7 · desk: MatDuo (Chief of Staff) · used by both agents · owner: Zaim
 
 ## Purpose
 Make Mahareka's AI staff work as one office: the right staff member takes each piece of work,
@@ -56,3 +56,7 @@ on Approvals in Mission Control.
   `tests/test_ask_master.py`, `tests/test_archive_search.py` and `icm_check.py`.
 - Changing a rule needs Zaim's approval and a version bump. Keep `name:` and the description
   stable so a new version installs over the old one.
+- 26 Nov 2026 (v1.7): a staff member keeps its card current inside a long conversation. Every
+  card ends with a version; before a new request the staff member asks `roster.py --since`
+  and gets the card again only if Zaim approved new memory or a new skill rule. The card's
+  skill rules are followed whenever that skill is used.
