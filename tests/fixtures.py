@@ -80,6 +80,18 @@ def make_ratebase(folder, tool=RATEBASE_STANDIN):
         ("BIF-007", "Shoe cabinet E1", None, None, 440, "PENDING"),
     ]:
         ws.append([rid, item, "E1", "fr", None, None, None, None, allin, allin, markup, sell, "SMC", "T001", "2026-06-01", status])
+    # the cases the first run on the real ratebase got wrong (26 Nov 2026): variants, supplier rows, sizes, wording, units
+    for rid, item, unit, sell, status in [
+        ("BIF-008", "Fridge unit H810 D580 loaded", "fr", 400, "VERIFIED"),
+        ("BIF-044", "Drawer 3-tier", "set", 800, "VERIFIED"), ("BIF-045", "Drawer 3-tier", "set", 820, "VERIFIED"), ("BIF-046", "Drawer 2-tier", "set", 500, "VERIFIED"),
+        ("BIF-072", "TV fluted panel D<100", "sqft", 50, "BUDGETARY"),
+        ("BIF-121", "SMC open colour carcass - kitchen", "fr", 100, "VERIFIED"),
+        ("BIF-130", "Pantry cabinet c/w swing door and soft closing hinges", "fr", 480, "VERIFIED"),
+    ]:
+        ws.append([rid, item, None, unit, None, None, None, None, None, None, None, sell, "SMC pricelist" if rid == "BIF-121" else "Workshop", "T002", "2026-06-01", status])
+    el = wb.create_sheet("EL"); el.append(["ELECTRICAL (synthetic)"]); el.append([]); el.append(RATEBASE_HEADERS)
+    for rid, item, sell in [("EL-004", "Twin eyeball downlight", 90), ("EL-038", "Eyeball downlight", 40), ("EL-010", "13A switch socket outlet - Vivace E", 60)]:
+        el.append([rid, item, None, "nos", None, None, None, None, None, None, None, sell, "Hafiz", "T003", "2026-06-01", "VERIFIED"])
     wb.create_sheet("README").append(["RB v9.9 | synthetic"])
     wb.save(folder / "QS_RATEBASE_v9.9_20260101.xlsx")
     (folder / "ratebase.py").write_text(tool, encoding="utf-8")

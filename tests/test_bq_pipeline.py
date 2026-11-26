@@ -149,6 +149,34 @@ class Pipeline(unittest.TestCase):
         run(SKILL / "_tools/rate_check.py", "--lines", fj, "--basis", "COST", "--band", "0.05", "--tool", self.know / "ratebase.py", "--json", rj)
         self.assertEqual(len(json.loads(rj.read_text(encoding="utf-8"))["flags"]), 6)
 
+    def test_rate_check_compares_only_what_is_surely_the_same_item(self):
+        """The first run on the real ratebase (26 Nov 2026) flagged wrong matches and missed rates that were there. Each case here is one of those."""
+        L = lambda row, desc, unit, rate, qty=1: {"row": row, "desc": desc, "unit": unit, "rate": rate, "qty": qty}
+        lines = [L(1, "Eyeball downlight", "pc", 100, 4), L(2, "Open colour carcass", "fr", 300), L(3, "Fridge unit", "fr", 600), L(4, "Drawer 3 tier", "set", 380, 2),
+                 L(5, "Fluted panel, S&I", "sqft", 20), L(6, "Pantry cabinet", "fr", 500), L(7, "13A single SSO", "pc", 70), L(8, "Floor protection", "ls", 900),
+                 L(9, "Baby ceiling fan + wiring", "nos", 250), L(10, "Renovation bin", "nos", 350), L(11, "Tall unit E1 melamine", "fr", 72), L(12, "Twin eyeball downlight", "nos", 92)]
+        fj, rj = self.tmp / "f.json", self.tmp / "r.json"; fj.write_text(json.dumps({"lines": lines}), encoding="utf-8")
+        p = run(SKILL / "_tools/rate_check.py", "--lines", fj, "--basis", "SELL", "--tool", self.know / "ratebase.py", "--json", rj)
+        out = json.loads(rj.read_text(encoding="utf-8"))
+        flags = {f["row"]: f for f in out["flags"]}; maybe = {m["row"]: m for m in out["possible"]}
+        # a variant is never pooled with another: a single against the single, the 3-tier against the 3-tiers
+        self.assertEqual(sorted(flags), [1, 4])
+        self.assertEqual((flags[1]["ratebase"]["ids"], flags[1]["evidence"]), (["EL-038"], "weak"), "unit pc is nos; the twin is not in the median; one row is weak evidence")
+        self.assertEqual((flags[4]["ratebase"]["ids"], flags[4]["median"], flags[4]["evidence"]), (["BIF-044", "BIF-045"], 810, "strong"))
+        self.assertEqual([f["id"] for f in out["flags"]], ["R01", "R02"]); self.assertEqual(out["flags"][0]["row"], 4, "strong evidence first")
+        self.assertNotIn(12, flags, "the twin is compared with the twin, and is inside the band")
+        # a likely row that must be confirmed first is never a flag
+        self.assertEqual(sorted(maybe), [2, 3, 5, 6, 7, 11])
+        self.assertIn("supplier price-list row", maybe[2]["why"]); self.assertEqual(maybe[2]["ratebase"]["id"], "BIF-121")
+        self.assertIn("size-dependent rate: the line gives no size", maybe[3]["why"]); self.assertIn("size-dependent", maybe[5]["why"])
+        self.assertIn("row is more specific", maybe[6]["why"]); self.assertEqual(maybe[6]["ratebase"]["id"], "BIF-130")
+        self.assertIn("different words", maybe[7]["why"]); self.assertEqual(maybe[7]["ratebase"]["id"], "EL-010", "SSO is read as switch socket outlet, pc as nos")
+        self.assertRegex(maybe[11]["why"], r"different words \((tall / wall|wall / tall)\)", "a tall unit is not a wall unit, however alike they are spelt")
+        self.assertEqual({n["row"]: n["why"] for n in out["not_comparable"]}, {8: "lump sum", 9: "composite line (several works in one rate)"})
+        self.assertEqual([g["row"] for g in out["gaps"]], [10], "only what is really missing is a gap")
+        self.assertIn("COMPARED: 3 | BAND FLAGS: 1 (+1 on weak evidence) | POSSIBLE MATCHES: 6 | NOT COMPARABLE: 2 | RATEBASE GAPS: 1", p.stdout)
+        self.assertIn("[R02] WEAK EVIDENCE row 1", p.stdout)
+
     def test_run_folders_never_collide(self):
         again = run(SKILL / "_tools/new_run.py", "--project", "T050", "--root", self.tmp).stdout.strip()
         self.assertNotEqual(again, str(self.run_dir))

@@ -18,8 +18,13 @@ Until v2.0 this skill kept a second rate workbook of its own; that is retired.
 1. Normalize BQ description → candidate item (strip dims, room names, brands to grade/spec)
 2. Match on item + UOM + BASIS; if grade differs, compare within-grade only
 3. For BIF with non-standard dims: pro-rate the standard rate BEFORE comparing (else every custom dim false-flags)
-4. No match = **ratebase gap** → list it for the handover, no flag. The script matches
-   conservatively (same UOM, close description): judge its near-misses, do not trust them blind
+4. No match = **ratebase gap** → list it for the handover, no flag
+5. The script compares a line only when item, unit and variant all agree (`nos`/`pc`/`unit` are
+   one unit; a twin is not a single; a 2-tier is not a 3-tier). It pools rows of exactly the
+   same item only, never a mix. Anything less certain comes back as **possible**, with the
+   reason, and is never a flag: a supplier price-list row is a component, a rate with a size
+   in it needs the line's size and pro-rata, a more specific row needs its spec confirmed
+6. A flag against one row, or against rows that are not `verified`, is **weak evidence**: say so
 
 ## Analysis rules
 - **Band:** compare vs median of `verified` rates, same BASIS. Outside ±15% (tunable via user instruction) → flag, ALWAYS with history context: item, last n rates, dates, projects, % deviation
