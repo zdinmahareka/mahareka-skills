@@ -30,7 +30,7 @@ The ICM files are method, not data: they hold no rates, names or project facts, 
 
 The split is forced as well as chosen: an `.xlsx` is a zip archive internally (`PK\x03\x04`), so a skill package containing the registry is rejected with *"Zip cannot contain nested zip files"*. Workbook memory can never ship inside a skill.
 
-Version expected: **1.0**. Builder version **2.3** (2.0 added the ICM layer; 2.1 added rule M11 and gate G14: every skill has a `README.md` for people; 2.2 runs on Hermes: the engines moved into `scripts/`, `new_skill.py` replaces `skill_scaffold.py`, and registry updates are staged for Zaim; 2.3 keeps two lessons learned on MatDuo: when not to convert a skill, and how to triage `skill_check.py` findings; the standard version is unchanged). The builder follows every rule it enforces — if it ever violates the standard, that is a defect, not an exception.
+Version expected: **1.0**. Builder version **2.4** (2.0 added the ICM layer; 2.1 added rule M11 and gate G14: every skill has a `README.md` for people; 2.2 runs on Hermes: the engines moved into `scripts/`, `new_skill.py` replaces `skill_scaffold.py`, and registry updates are staged for Zaim; 2.3 keeps two lessons learned on MatDuo: when not to convert a skill, and how to triage `skill_check.py` findings; 2.4 records that the `bq-error-checker` conflict is resolved; the standard version is unchanged). The builder follows every rule it enforces — if it ever violates the standard, that is a defect, not an exception.
 
 ## The loop
 
@@ -118,7 +118,7 @@ Never tell Zaim to replace anything "in the skill" — the skill holds no data. 
 
 One skill owns each shared rule; others reference the owner by name and never restate the value. Current owners are listed in `MAHAREKA_STANDARD.md`. When a rule changes, run `PY scripts/skill_check.py --all` — stale copies surface as CROSS blockers.
 
-Known open conflict at v1.0: `bq-error-checker` maintains a second rate memory beside `QS_RATEBASE.xlsx` and carries the retired flat MROUND-5 rounding in three files. Logged, remediation not yet approved. **Do not fix it as a side effect of another task.** `bq-error-checker` v2.0 (the ICM pilot) moved these conflicts verbatim to `bq-error-checker/_shared/conflicts.md`; they are still open.
+Conflict logged at v1.0, resolved on 26 Nov 2026: `bq-error-checker` kept a second rate memory beside `QS_RATEBASE.xlsx` and carried the retired flat rounding rule. Zaim approved the remediation as its own job; `bq-error-checker` v2.1 keeps no rate memory and names the rounding rule's owner. Its other declared conflicts are still open in `bq-error-checker/_shared/conflicts.md`. The rule stands for every skill: **do not fix a declared conflict as a side effect of another task.**
 
 ## What this skill will not do
 

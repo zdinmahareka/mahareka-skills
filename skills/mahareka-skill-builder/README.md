@@ -1,6 +1,6 @@
 # mahareka-skill-builder: README
 
-Version 2.3 · desk: MatDuo (Chief of Staff) · Hermes agents only · owner: Zaim
+Version 2.4 · desk: MatDuo (Chief of Staff) · Hermes agents only · owner: Zaim
 
 ## Purpose
 Build new Mahareka skills to one house standard, and audit the ones that exist, so every skill

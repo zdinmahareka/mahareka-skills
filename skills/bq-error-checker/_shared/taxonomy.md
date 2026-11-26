@@ -1,6 +1,6 @@
 # Error taxonomy — Layers A to G
 
-What counts as a finding, by layer. Scripts do A–C and F (`_tools/check_bq.py`, `_tools/rate_learn.py`); stage 03 applies the judgment in B, D, E and G. Unchanged from v1.1.
+What counts as a finding, by layer. Scripts do A–C (`_tools/check_bq.py`); F is judgment against the one ratebase since v2.1; stage 03 applies the judgment in B, D, E and G. Unchanged from v1.1.
 
 ### Layer A — Arithmetic (script)
 - Qty × Rate = Amount per line (tolerance RM1)
@@ -46,7 +46,7 @@ What counts as a finding, by layer. Scripts do A–C and F (`_tools/check_bq.py`
 
 ### Layer F — Rate Intelligence / Learning (script + judgment)
 Read `learning.md` for the full protocol. Summary:
-- Match BQ lines to Rate_History via normalized description + UOM + grade
+- Match BQ lines to `QS_RATEBASE` (through `mahareka-qs-agent`'s engines) via normalized description + UOM + grade
 - **Band check:** outside historical band (default ±15%, tunable) → flag with history
   context
 - **Systematic shift vs single deviation:** many items shifted ~same % = probable pricelist
@@ -55,8 +55,9 @@ Read `learning.md` for the full protocol. Summary:
 - **Drift:** consistent direction across projects/time = trend advisory
 - **Subcon fingerprint:** known-reliable vendors (SMC/Eva Leong: verified accurate) lean
   "price changed"; unknown vendors get cold full checks
-- **Append:** new/changed rates written to Rate_History as `pending` until Zaim verifies;
-  flag resolutions logged (`confirmed error` / `false alarm` / `genuine change`)
+- **Hand over, never store:** new/changed rates are listed in the report for
+  `mahareka-qs-agent` to store as `pending` until Zaim verifies; flag resolutions are listed
+  there too (`confirmed error` / `false alarm` / `genuine change`)
 
 ### Layer G — Commercial review (judgment, Mode 2 only)
 Governed by `reporting.md`. Covers cost-driver concentration and Pareto

@@ -3,10 +3,9 @@ import os, shutil, json, re, subprocess, sys, tempfile, unittest
 from pathlib import Path
 
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")  # child output on Windows consoles
-from openpyxl import load_workbook
 
 sys.path.insert(0, str(Path(__file__).parent))
-from fixtures import make_bq, make_history
+from fixtures import make_bq
 
 SKILL = Path(__file__).resolve().parents[1] / "skills" / "bq-error-checker"
 PY = sys.executable
@@ -26,8 +25,8 @@ class Pipeline(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
-        self.bq, self.hist = self.tmp / "test_bq.xlsx", self.tmp / "Rate_History.xlsx"
-        make_bq(self.bq); make_history(self.hist)
+        self.bq = self.tmp / "test_bq.xlsx"
+        make_bq(self.bq)
         out = run(SKILL / "_tools/new_run.py", "--project", "T050", "--input", self.bq, "--root", self.tmp)
         self.run_dir = Path(out.stdout.strip())
 
@@ -56,11 +55,10 @@ class Pipeline(unittest.TestCase):
             "--json", r / "02_checks/findings.json")
         self.assertIn("DEGRADED", self.gate("02", ok=False).stdout)
         (r / "02_checks" / "boot.txt").write_text("QS BOOT: INTACT\n", encoding="utf-8")
-        out = run(SKILL / "_tools/rate_learn.py", "--lines", r / "02_checks/findings.json", "--history", self.hist,
-                  "--project", "T050", "--subcon", "SMC", "--basis", "SELL",
-                  "--out", r / "04_report/Rate_History_updated.xlsx", "--json", r / "02_checks/rates.json")
-        self.assertIn("MEMORY layout: current", out.stdout)
         self.gate("02")
+        # one ratebase (v2.1): stage 02 leaves no rate file of its own behind, and nothing is written for a second memory
+        self.assertEqual(sorted(p.name for p in (r / "02_checks").iterdir()), ["boot.txt", "check.md", "findings.json"])
+        self.assertEqual([p.name for p in (r / "04_report").iterdir() if p.suffix == ".xlsx"], [])
 
         # the regression answers (G10)
         f = json.loads((r / "02_checks/findings.json").read_text(encoding="utf-8"))["findings"]
@@ -72,23 +70,9 @@ class Pipeline(unittest.TestCase):
         self.assertFalse(any(x["row"] == 9 for x in f), "lesson 14: 'not included' must not be flagged")
         self.assertEqual([x["id"] for x in f], [f"F{i:02d}" for i in range(1, len(f) + 1)])
 
-        rates = json.loads((r / "02_checks/rates.json").read_text(encoding="utf-8"))
-        self.assertEqual(rates["layout"], "current")
-        wardrobe = [x for x in rates["flags"] if x["row"] == 7]
-        self.assertTrue(wardrobe and wardrobe[0]["dev_pct"] > 15, rates)                  # 690 vs median 530
-        self.assertFalse(any(x["row"] == 4 for x in rates["flags"]))                      # 290 within band
-
-        # memory: appended to INBOX only, curated RATES untouched, formula kept
-        wb = load_workbook(r / "04_report/Rate_History_updated.xlsx")
-        self.assertEqual(wb["RATES"].max_row, 6)
-        self.assertEqual(wb["RATES"]["G6"].value, "=ROUND(E6*F6/5)*5")
-        inbox = list(wb["INBOX"].iter_rows(min_row=2, values_only=True))
-        self.assertTrue(inbox and all(row[10] in ("pending", "flagged") for row in inbox))
-        self.assertTrue(any(row[1].startswith("Wardrobe") and row[10] == "flagged" for row in inbox))
-
         # 03: every id needs a decision
         review = r / "03_review" / "review.md"
-        ids = [x["id"] for x in f] + [x["id"] for x in rates["flags"]]
+        ids = [x["id"] for x in f]
         rows = "".join(f"| {i} | - | - | KEEP | - |\n" for i in ids[:-1])
         review.write_text(review.read_text(encoding="utf-8").replace("|---|---|---|---|---|\n", "|---|---|---|---|---|\n" + rows), encoding="utf-8")
         self.assertIn(ids[-1], self.gate("03", ok=False).stdout)
@@ -96,24 +80,28 @@ class Pipeline(unittest.TestCase):
         self.assertIn("decision must be", self.gate("03", ok=False).stdout)
         review.write_text(review.read_text(encoding="utf-8").replace("MAYBE", "DROP"), encoding="utf-8")
         self.gate("03")
+        # a rate finding is made in the review itself (R ids, against the one ratebase) and needs a valid decision too
+        text = review.read_text(encoding="utf-8")
+        review.write_text(text.replace(rows, rows + "| R01 | 7 | wardrobe rate above the ratebase band | LATER | - |\n"), encoding="utf-8")
+        self.assertIn("decision must be", self.gate("03", ok=False).stdout)
+        review.write_text(review.read_text(encoding="utf-8").replace("LATER", "KEEP"), encoding="utf-8")
+        self.gate("03")
 
         status = run(SKILL / "_tools/gate.py", r, "status").stdout
         self.assertRegex(status, r"01_intake\s+pass")
         self.assertRegex(status, r"03_review\s+pass")
         self.assertRegex(status, r"04_report\s+awaiting Zaim")
 
-    def test_legacy_memory_still_read(self):
-        from openpyxl import Workbook
-        wb = Workbook(); ws = wb.active; ws.title = "RATES"
-        ws.append(["ITEM_KEY", "DESCRIPTION", "UOM", "GRADE_SPEC", "BASIS", "RATE", "PROJECT", "SUBCON", "DATE", "STATUS", "NOTES"])
-        ws.append(["base unit e1 melamine carcass", "Base unit E1 melamine carcass", "fr", "E1", "SELL", 295, "T", "SMC", "2026-01-01", "verified", ""])
-        legacy = self.tmp / "legacy.xlsx"; wb.save(legacy)
-        fj = self.tmp / "f.json"
-        run(SKILL / "_tools/check_bq.py", self.bq, "--json", fj)
-        out = run(SKILL / "_tools/rate_learn.py", "--lines", fj, "--history", legacy, "--project", "T",
-                  "--out", self.tmp / "o.xlsx", "--json", self.tmp / "r.json")
-        self.assertIn("MEMORY layout: legacy", out.stdout)
-        self.assertGreaterEqual(json.loads((self.tmp / "r.json").read_text(encoding="utf-8"))["matched"], 1)
+    def test_one_ratebase_no_second_memory(self):
+        """v2.1 (Zaim, 26 Nov 2026): the skill reads QS_RATEBASE through its owner and keeps no rate memory of its own."""
+        self.assertFalse((SKILL / "_tools" / "rate_learn.py").exists())
+        text = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in SKILL.rglob("*") if p.is_file() and p.suffix in (".md", ".py"))
+        for gone in ("Rate_History", "rate_learn", "rates.json", "MAHAREKA_RATE_HISTORY", "nearest RM5", "MROUND"):
+            self.assertNotIn(gone, text, f"{gone} belongs to the retired second memory or the retired rounding rule")
+        self.assertIn("rule R-ALL-42 (owned by `mahareka-qs-agent`", text, "the rounding rule is named by its owner, not restated")
+        conflicts = (SKILL / "_shared" / "conflicts.md").read_text(encoding="utf-8")
+        self.assertEqual(conflicts.count("RESOLVED in v2.1"), 2); self.assertIn('3. **"not included" annotation.**', conflicts); self.assertIn("Unresolved.", conflicts, "what was not decided stays declared")
+        self.assertIn("**Always ask Zaim:**", (SKILL / "SKILL.md").read_text(encoding="utf-8"))
 
     def test_run_folders_never_collide(self):
         again = run(SKILL / "_tools/new_run.py", "--project", "T050", "--root", self.tmp).stdout.strip()

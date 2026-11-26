@@ -48,18 +48,11 @@ def g02(run):
     if data.get("info", {}).get("sheet") != sheet:
         return f"findings.json checked sheet '{data.get('info', {}).get('sheet')}', intake says '{sheet}'"
     if any("id" not in f for f in data.get("findings", [])): return "findings without ids: rerun check_bq.py v2.0"
-    rj = d / "rates.json"
-    if rj.exists():
-        try: json.loads(rj.read_text(encoding="utf-8", errors="replace"))
-        except ValueError: return "rates.json not valid JSON"
     return None
 
 def ids_from_02(run):
     d = run / "02_checks"
-    ids = [f["id"] for f in json.loads((d / "findings.json").read_text(encoding="utf-8", errors="replace")).get("findings", [])]
-    if (d / "rates.json").exists():
-        ids += [f["id"] for f in json.loads((d / "rates.json").read_text(encoding="utf-8", errors="replace")).get("flags", [])]
-    return ids
+    return [f["id"] for f in json.loads((d / "findings.json").read_text(encoding="utf-8", errors="replace")).get("findings", [])]
 
 def g03(run):
     p = run / "03_review" / "review.md"

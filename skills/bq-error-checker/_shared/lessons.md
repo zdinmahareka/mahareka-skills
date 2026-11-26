@@ -19,9 +19,9 @@ Format: [Project / ref / party, date] — pattern — detection rule
 14. **[LEA/Tn Nizam, Jul 2026] 'Rate Only'/'not included' text in Amount column is acceptable** per Zaim — exclude from math, don't flag.
 
 15. **[LEA/Tn Nizam, Jul 2026] Blockboard Melamine Finish = SMC equivalent loaded rate ×1.30** (pro-rata first, then +30%). Previous 1.03×/1.06× flags = false alarm from applying aluminium-vendor costs to blockboard lines. Match material spec to correct cost basis BEFORE margin math.
-16. **[Standing] Ask-when-unsure protocol:** unknown cost basis/spec/vendor → ask Zaim, save answer to Rate_History same session. Memory updates NEVER require skill re-packaging; only rule changes do.
+16. **[Standing] Ask-when-unsure protocol:** unknown cost basis/spec/vendor → ask Zaim; his answer is stored in the ratebase through `mahareka-qs-agent` (v2.1: this skill stores no rate). Memory updates NEVER require skill re-packaging; only rule changes do.
 
 17. **[Rule confirmed Jul 2026] SMC melamine doors do NOT pro-rate** — table rate flat regardless of height (SMC basis = body + melamine door bundled). Non-melamine doors = per sqft, separate line. Earlier N033 door-pro-rata reconstruction was coincidental fit, superseded.
 18. **[Rule confirmed Jul 2026] Concrete Table section** = site already has concrete structure → doors/drawers/shelf/partition only, no carcass.
 
-*(Append new lessons here at each skill re-package. Interim lessons live in Rate_History NOTES.)*
+*(Append new lessons here at each skill re-package. Interim lessons are given to Zaim in the report, stage 04.)*

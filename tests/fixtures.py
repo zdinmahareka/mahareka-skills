@@ -1,4 +1,4 @@
-"""Synthetic BQ and rate memory for regression tests. No client data."""
+"""Synthetic BQ and registry for regression tests. No client data."""
 from openpyxl import Workbook
 
 def make_bq(path):
@@ -18,20 +18,6 @@ def make_bq(path):
     ws.append(["h)", "Herringbone SPC option", 100, "sqft", 12, 1200])          # r11 hidden with amount
     ws.row_dimensions[11].hidden = True
     ws.append([None, "TOTAL AMOUNT", None, None, None, 2900 + 2480 + 288 + 4140 + 1450 + 800])  # r12
-    wb.save(path)
-
-def make_history(path):
-    wb = Workbook(); ws = wb.active; ws.title = "RATES"
-    cols = ["ELEMENT", "ITEM", "SPEC/GRADE", "UOM", "COST RATE", "MARKUP", "SELL RATE", "VENDOR",
-            "SOURCE/PROJECT", "DATE", "STATUS", "NOTES"]
-    ws.append(cols)
-    for i, (item, sell) in enumerate([("Base unit E1 melamine carcass", 290), ("Base unit E1 melamine carcass", 300),
-                                      ("Wardrobe swing door E1", 520), ("Wardrobe swing door E1", 540)], start=2):
-        ws.append(["BIF", item, "E1", "fr", None, None, sell, "SMC", "T001", "2026-06-01", "verified", ""])
-    ws.append(["BIF", "Wall unit E1 melamine", "E1", "fr", 200, 1.5, "=ROUND(E6*F6/5)*5", "SMC", "T002",
-               "2026-07-01", "verified", "formula row"])
-    wb.create_sheet("INBOX").append(cols)
-    wb.create_sheet("RESOLUTIONS").append(["DATE", "PROJECT", "FLAG", "OUTCOME", "LESSON"])
     wb.save(path)
 
 REGISTRY_TABS = {

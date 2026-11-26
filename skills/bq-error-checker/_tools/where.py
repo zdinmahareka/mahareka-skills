@@ -8,8 +8,6 @@ only, so any Python runs it.
              folder of qs_boot.py in an installed skill next to this one (mahareka-qs-agent keeps
              it in its scripts/). Home is never searched: archive and download copies (old
              ratebase versions) must never be used. Never copied or moved.
-  Rate_History  $MAHAREKA_RATE_HISTORY (a file Zaim names), else the newest Rate_History*.xlsx
-             in KNOWLEDGE, else absent (Layer F skipped)
   RUNS       $MAHAREKA_RUNS, else ~/mahareka-runs (one folder per audit, made by new_run.py)
 Usage: python where.py          prints the paths and how each was found
        python where.py --json   the same as JSON
@@ -71,24 +69,16 @@ def knowledge():
 def runs():
     return Path(os.environ.get("MAHAREKA_RUNS") or Path.home() / "mahareka-runs").expanduser()
 
-def rate_history(k):
-    env = os.environ.get("MAHAREKA_RATE_HISTORY")
-    if env: return Path(env).expanduser(), "env"
-    near = sorted(k.glob("Rate_History*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True) if k.is_dir() else []
-    return (near[0], "knowledge") if near else (None, None)
-
 def main():
     if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(errors="replace")  # Windows consoles
     py, py_how = python()
-    k, how = knowledge(); qs = k / "qs_boot.py"; rh, rh_how = rate_history(k)
+    k, how = knowledge(); qs = k / "qs_boot.py"
     info = {"python": py, "python_found_by": py_how,
-            "knowledge": str(k), "knowledge_found_by": how, "qs_boot": str(qs) if qs.is_file() else None,
-            "rate_history": str(rh) if rh else None, "rate_history_found_by": rh_how, "runs": str(runs())}
+            "knowledge": str(k), "knowledge_found_by": how, "qs_boot": str(qs) if qs.is_file() else None, "runs": str(runs())}
     if "--json" in sys.argv: print(json.dumps(info, indent=1)); return
     print(f"PY            {(py + '  (' + py_how + ')') if py else 'MISSING: no Python with openpyxl (rerun install-hermes.sh)'}")
     print(f"KNOWLEDGE     {k}  ({how}{'' if k.is_dir() else ', missing'})")
     print(f"qs_boot.py    {info['qs_boot'] or 'MISSING'}")
-    print(f"Rate_History  {(str(rh) + '  (' + rh_how + ')') if rh else 'absent (Layer F skipped)'}")
     print(f"RUNS          {info['runs']}")
 
 if __name__ == "__main__":

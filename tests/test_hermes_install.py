@@ -27,14 +27,14 @@ class HermesInstall(unittest.TestCase):
         w = self.where()
         self.assertEqual(w["knowledge"], str(self.home / "mahareka-knowledge"))
         self.assertEqual(w["runs"], str(self.home / "mahareka-runs"))
-        self.assertIsNone(w["qs_boot"]); self.assertIsNone(w["rate_history"])
+        self.assertIsNone(w["qs_boot"]); self.assertNotIn("rate_history", w, "one ratebase: the skill looks for no rate memory of its own")
         k = self.home / "kb"; k.mkdir()
         (k / "qs_boot.py").write_text("print('INTACT')\n", encoding="utf-8")
         (k / "Rate_History.xlsx").write_bytes(b"x")
         w = self.where(MAHAREKA_KNOWLEDGE=str(k))
         self.assertEqual(w["knowledge_found_by"], "env")
         self.assertTrue(w["qs_boot"].endswith("qs_boot.py"))
-        self.assertTrue(w["rate_history"].endswith("Rate_History.xlsx"))
+        self.assertNotIn("rate_history", w, "a leftover Rate_History in KNOWLEDGE is ignored")
 
     def test_where_never_uses_archive_or_download_copies(self):
         """Old ratebase / Rate_History copies under home (Downloads, ARCHIVE, Telegram, temp) are ignored."""
@@ -44,10 +44,10 @@ class HermesInstall(unittest.TestCase):
             (p / "qs_boot.py").write_text("", encoding="utf-8"); (p / "Rate_History.xlsx").write_bytes(b"x")
         w = self.where()
         self.assertEqual(w["knowledge"], str(self.home / "mahareka-knowledge"))
-        self.assertIsNone(w["qs_boot"]); self.assertIsNone(w["rate_history"])
+        self.assertIsNone(w["qs_boot"])
         named = self.home / "Downloads" / "ARCHIVE" / "mahareka qs agent v1.4" / "Rate_History.xlsx"
-        w = self.where(MAHAREKA_RATE_HISTORY=str(named))          # only when Zaim names it
-        self.assertEqual((w["rate_history"], w["rate_history_found_by"]), (str(named), "env"))
+        w = self.where(MAHAREKA_RATE_HISTORY=str(named))          # even a named one is no longer read (v2.1)
+        self.assertNotIn(str(named), json.dumps(w))
 
     def install(self, skills, **extra):
         # the installer must use this Python (it has openpyxl); python3 on PATH may be a Hermes venv without it
@@ -80,7 +80,7 @@ class HermesInstall(unittest.TestCase):
         p = self.install(skills, MAHAREKA_REPLACE="bq-error-checker")   # Zaim says replace it
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertEqual((old / "_local" / "lessons.md").read_text(encoding="utf-8"), "mine", "the machine's own notes are carried over")
-        self.assertIn("version **2.0**", (old / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn("version **2.1**", (old / "SKILL.md").read_text(encoding="utf-8"))
         self.assertFalse((old / "references").exists(), "old files must not linger")
         self.assertTrue((skills / "mahareka" / "mahareka-skill-builder" / "SKILL.md").is_file())
         backups = list((self.home / "mc-backups" / "skills").glob("bq-error-checker-*"))
@@ -99,7 +99,7 @@ class HermesInstall(unittest.TestCase):
                                       capture_output=True, text=True, encoding="utf-8", env=self.env).stdout)
         self.assertEqual(w["knowledge"], str(qs)); self.assertEqual(w["knowledge_found_by"], "skill mahareka-qs-agent")
         self.assertEqual(w["python"], recorded); self.assertEqual(w["python_found_by"], "recorded by install")
-        self.assertIsNone(w["rate_history"])
+        self.assertNotIn("rate_history", w, "one ratebase: no rate memory of its own")
 
     @unittest.skipIf(os.environ.get("MAHAREKA_SKIP_TESTS"), "already inside an install run")
     def test_install_never_guesses_the_folder_and_keeps_local_edits(self):
