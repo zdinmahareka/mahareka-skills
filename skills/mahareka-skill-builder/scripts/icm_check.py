@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Mahareka ICM Standard checker (references/icm-standard.md, rules M1-M10).
+Mahareka ICM Standard checker (references/icm-standard.md, rules M1-M11).
 Usage: python icm_check.py <skill folder>        one skill
        python icm_check.py --all <folder>         every skill (folder holding SKILL.md) below it
 Prints BLOCKER / WARN / INFO lines. Exit 1 on any blocker. Standard library only.
@@ -13,6 +13,8 @@ TOKEN_BUDGET = 8000          # M6, approximated as characters / 4
 ENTRY_LINES = 60             # M1, pipeline skills only
 PATH_RE = re.compile(r"`(?:SKILL/)?((?:_shared|_templates|_tools|stages|references|assets|scripts)/[^`\s]+)`")
 LINK_RE = re.compile(r"\]\(([^)#\s]+)\)")
+README_MUST = ("Purpose", "What", "Why", "When", "How")     # M11: a heading starts with each
+README_SHOULD = ("Using it", "Maintaining it")
 
 def frontmatter(text):
     m = re.match(r"---\n(.*?)\n---\n?", text, re.S)
@@ -31,6 +33,17 @@ def check(skill):
     fm, body = frontmatter(entry.read_text(encoding="utf-8"))
     if not re.search(r"^name:\s*\S", fm, re.M): add("BLOCKER", "SKILL.md frontmatter has no name")
     if not re.search(r"^description:\s*\S", fm, re.M): add("BLOCKER", "SKILL.md frontmatter has no description")
+    # M11: the page for people. Every shape has one.
+    readme = skill / "README.md"
+    if not readme.is_file():
+        add("BLOCKER", "M11: no README.md (the page for people: Purpose, What, Why, When, How)")
+    else:
+        heads = [h.strip() for h in re.findall(r"^##\s+(.+?)\s*$", readme.read_text(encoding="utf-8", errors="replace"), re.M)]
+        has = lambda name: any(re.match(rf"{re.escape(name)}\b", h, re.I) for h in heads)
+        for name in README_MUST:
+            if not has(name): add("BLOCKER", f"M11: README.md has no '## {name} ...' section")
+        for name in README_SHOULD:
+            if not has(name): add("WARN", f"M11: README.md has no '## {name}' section")
     for extra in skill.rglob("SKILL.md"):
         if extra != entry:
             add("BLOCKER", f"M9: second SKILL.md at {extra.relative_to(skill)} (counted as a skill by Hermes and Mission Control; name it SKILL.entry.md)")

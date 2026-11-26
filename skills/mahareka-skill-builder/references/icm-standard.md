@@ -50,7 +50,7 @@ Data the skills read (ratebase, registry, memory workbooks) lives in KNOWLEDGE:
 `$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`. Mahareka skills are for the Hermes
 agents only.
 
-## 3. The rules (M1–M10)
+## 3. The rules (M1–M11)
 
 - **M1 Entry routes, never holds content.** Pipeline `SKILL.md` body ≤ 60 lines: who it is for,
   where things live, how to start a run, route by task, boundaries. Rules live on shelves.
@@ -75,6 +75,10 @@ agents only.
 - **M10 No data in the skill.** Memory workbooks stay in KNOWLEDGE (an `.xlsx` is a
   zip and cannot ship inside a skill package). The skill ships rules, contracts, templates
   and tools.
+- **M11 A page for people.** Every skill has `README.md` (a human overview, never loaded on a
+  run) with headings starting Purpose / What / Why / When / How, plus Using it and Maintaining
+  it. Starter: `assets/icm/README.md`. It holds no rates, secrets or client data (Zaim,
+  26 Nov 2026).
 
 Break a rule only on purpose, and write why under "Invariants broken on purpose" in the root
 `CONTEXT.md`. A break with no reason is a defect.

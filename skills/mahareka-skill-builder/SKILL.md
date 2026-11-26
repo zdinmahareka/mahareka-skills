@@ -16,7 +16,7 @@ Every Mahareka engine, template and the registry live in the **KNOWLEDGE folder*
 SKILL (this folder)   instructions · frozen · changes only on a version bump
   references/icm-standard.md   the Mahareka ICM Standard (shape of complex skills)
   assets/icm/                  starters: SKILL.entry.md, CONTEXT.root.md, stage-CONTEXT.md, run/, _tools/new_run.py
-  scripts/icm_check.py         structure checker for rules M1–M10
+  scripts/icm_check.py         structure checker for rules M1–M11
 KNOWLEDGE FOLDER     sb_boot.py · skill_scaffold.py · skill_check.py
   = the live layer    MAHAREKA_STANDARD.md · TYPE_A/B/C templates
                       SKILL_REGISTRY.xlsx   ← the memory that learns
@@ -26,7 +26,7 @@ The ICM files are method, not data: they hold no rates, names or project facts, 
 
 The split is forced as well as chosen: an `.xlsx` is a zip archive internally (`PK\x03\x04`), so a skill package containing the registry is rejected with *"Zip cannot contain nested zip files"*. Workbook memory can never ship inside a skill.
 
-Version expected: **1.0**. Builder version **2.0** (adds the ICM layer; the standard version is unchanged). The builder follows every rule it enforces — if it ever violates the standard, that is a defect, not an exception.
+Version expected: **1.0**. Builder version **2.1** (2.0 added the ICM layer; 2.1 adds rule M11 and gate G14: every skill has a `README.md` for people; the standard version is unchanged). The builder follows every rule it enforces — if it ever violates the standard, that is a defect, not an exception.
 
 ## The loop
 
@@ -78,7 +78,7 @@ Never tell Zaim to replace anything "in the skill" — the skill holds no data. 
 4. **Audit.** `python3 $MAHAREKA_KNOWLEDGE/skill_check.py <path>` — or `--all` for the portfolio.
    Reports BLOCKER / WARN / INFO against the 11 principles plus cross-skill rule conflicts. Exit 1 on any blocker. Run it on every generated package before handing over, and re-run `--all` whenever a shared rule changes.
 
-   ICM structure: `python3 scripts/icm_check.py <path>` (or `--all <folder>`, from this skill's folder). Checks M1–M10: one `SKILL.md` only, contracts complete with exactly one Check, stage numbering, paths that resolve, ~8k tokens per stage. Exit 1 on any blocker.
+   ICM structure: `python3 scripts/icm_check.py <path>` (or `--all <folder>`, from this skill's folder). Checks M1–M11: a `README.md` with its five sections, one `SKILL.md` only, contracts complete with exactly one Check, stage numbering, paths that resolve, ~8k tokens per stage. Exit 1 on any blocker.
 
 5. **Verify by running, not by reading.** Restore the package into a clean folder, run its bootstrap, and run its acceptance test. A package that has not been executed has not been tested.
 
@@ -88,7 +88,7 @@ Never tell Zaim to replace anything "in the skill" — the skill holds no data. 
 
    Registry STATUS vocabulary: `VERIFIED` (audited in place and passing) · `BUDGETARY` (scaffolded, not yet audited where it runs) · `PENDING` (awaiting Zaim's decision, e.g. remediation approval) · `SUPERSEDED` (retired or merged, row retained).
 
-7. **Ship gates.** Before handing any skill over, clear the 13 gates (G1–G12 in the registry's GATES tab, plus G13) — G1 archetype justified, G2 triggers, G3 two layers, G4 bootstrap, G5 loud failure, G6 write path, G7 append-only, G8 no hardcoded data, G9 decision authority, G10 regression passes, G11 no stale owned rules, G12 restored and executed, **G13 ICM shape** (Type B/C: the shape matches the type and `icm_check.py` passes; new in v2.0 — add the G13 row to the registry's GATES tab at the next publish). State `Gate Gx pending — [what is needed]` in the output whenever one is unresolved. G12 is not optional: a package that has not been executed has not been tested.
+7. **Ship gates.** Before handing any skill over, clear the 14 gates (G1–G12 in the registry's GATES tab, plus G13 and G14) — G1 archetype justified, G2 triggers, G3 two layers, G4 bootstrap, G5 loud failure, G6 write path, G7 append-only, G8 no hardcoded data, G9 decision authority, G10 regression passes, G11 no stale owned rules, G12 restored and executed, **G13 ICM shape** (Type B/C: the shape matches the type and `icm_check.py` passes; new in v2.0 — add the G13 row to the registry's GATES tab at the next publish), **G14 README** (the skill has `README.md` with Purpose, What, Why, When, How, plus Using it and Maintaining it, written from the skill's own files; `icm_check.py` fails a skill without it; new in v2.1 — add the G14 row at the next publish). State `Gate Gx pending — [what is needed]` in the output whenever one is unresolved. G12 is not optional: a package that has not been executed has not been tested.
 
 8. **Decision authority.** Builder decides alone: archetype recommendation, file layout, trigger wording, scaffold output, audit findings. **ALWAYS ASK ZAIM:** overriding a recommended archetype, remediating an existing skill (it is disruptive and belongs in its own job), changing a rule owned by another skill, retiring or merging a skill, anything that edits `mahareka-qs-agent` or its ratebase.
 

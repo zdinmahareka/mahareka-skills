@@ -9,7 +9,7 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 | Path | Holds |
 |---|---|
 | `skills/<name>/` | one skill each, exactly as it installs (`SKILL.md` at its top) |
-| `skills/mahareka-skill-builder/references/icm-standard.md` | the standard: shapes, rules M1–M10, walk test |
+| `skills/mahareka-skill-builder/references/icm-standard.md` | the standard: shapes, rules M1–M11, walk test |
 | `tests/` | regression and structure tests (synthetic data only) |
 | `tools/install-hermes.sh` | installs skills into this machine's recorded Hermes skills folder; keeps a copy that was edited on the machine |
 | `tools/skill_state.py` | tells whether an installed skill is unedited (recorded at install, or a version in this repo's history) |
@@ -19,9 +19,13 @@ KNOWLEDGE folder (`$MAHAREKA_KNOWLEDGE`, default `~/mahareka-knowledge`).
 
 | Skill | Version | Shape |
 |---|---|---|
-| `mahareka-skill-builder` | 2.0 | Shelves (Type B) |
+| `mahareka-skill-builder` | 2.1 | Shelves (Type B) |
 | `bq-error-checker` | 2.0 | ICM Pipeline, 4 stages (ICM pilot) |
 | `chief-of-staff` | 1.5 | Shelves (Type B): routes work to the Virtual Office staff; asks the machine that holds a skill; searches the desk archives as one linked web |
+
+Every skill ships a `README.md` for people (rule M11, gate G14; Zaim, 26 Nov 2026): headings
+starting Purpose / What / Why / When / How, plus Using it and Maintaining it. `icm_check.py`
+fails a skill without it, and the installer runs that check. Starter: `assets/icm/README.md`.
 
 ## Route by task
 
