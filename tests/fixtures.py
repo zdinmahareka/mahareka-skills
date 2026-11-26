@@ -87,6 +87,12 @@ def make_ratebase(folder, tool=RATEBASE_STANDIN):
         ("BIF-072", "TV fluted panel D<100", "sqft", 50, "BUDGETARY"),
         ("BIF-121", "SMC open colour carcass - kitchen", "fr", 100, "VERIFIED"),
         ("BIF-130", "Pantry cabinet c/w swing door and soft closing hinges", "fr", 480, "VERIFIED"),
+        # second run on the real ratebase: main words, size families, word order, composite works
+        ("BIF-140", "Larder unit H2100 D600", "fr", 900, "VERIFIED"), ("BIF-141", "Larder unit H2400 D600", "fr", 1000, "VERIFIED"),
+        ("BIF-032", "Entrance cabinet swing door", "fr", 700, "VERIFIED"),
+        ("BIF-016", "Sink zone PVC foam board <3ft", "set", 320, "VERIFIED"),
+        ("ST-007", "Sintered backsplash", "sqft", 100, "VERIFIED"), ("ST-008", "Sintered backsplash", "sqft", 110, "VERIFIED"),
+        ("EL-003", "Relocate TV socket", "nos", 150, "VERIFIED"),
     ]:
         ws.append([rid, item, None, unit, None, None, None, None, None, None, None, sell, "SMC pricelist" if rid == "BIF-121" else "Workshop", "T002", "2026-06-01", status])
     el = wb.create_sheet("EL"); el.append(["ELECTRICAL (synthetic)"]); el.append([]); el.append(RATEBASE_HEADERS)

@@ -25,6 +25,9 @@ Until v2.0 this skill kept a second rate workbook of its own; that is retired.
    reason, and is never a flag: a supplier price-list row is a component, a rate with a size
    in it needs the line's size and pro-rata, a more specific row needs its spec confirmed
 6. A flag against one row, or against rows that are not `verified`, is **weak evidence**: say so
+7. A candidate is chosen by the line's main words (the item, not what is done to it and not a
+   late word such as "swing door"). A line that takes something out and puts something in is
+   **not comparable**: several works, no single rate
 
 ## Analysis rules
 - **Band:** compare vs median of `verified` rates, same BASIS. Outside ±15% (tunable via user instruction) → flag, ALWAYS with history context: item, last n rates, dates, projects, % deviation

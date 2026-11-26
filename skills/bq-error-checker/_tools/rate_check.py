@@ -25,7 +25,9 @@ Writes rates.json for stage 03, always (so a check that could not run is seen, n
 A line is COMPARED only when the item, the unit and the variant all agree. Everything less
 certain is "possible", never a flag: a false accusation costs more than a missed one. The
 judgment is stage 03's, using _shared/learning.md.
-Tuned on 26 Nov 2026 from the first run against the real ratebase (MatDuo's seven points).
+Tuned on 26 Nov 2026 from two runs against the real ratebase (MatDuo's reports): the first
+run's wrong flags are gone; the second run's points are the ranking by main words, composite
+works, size words and the near item shown for a gap.
 """
 import argparse, contextlib, importlib.util, io, json, re, statistics, sys
 from difflib import SequenceMatcher
@@ -34,7 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import where  # noqa: E402  (finds KNOWLEDGE the same way as every other tool here)
 
-__version__ = "2.3"
+__version__ = "2.4"
 NEEDS = ("open_rb", "rate_tabs", "rows")
 STOP = {"to","supply","and","install","c/w","cw","the","of","for","with","in","at","complete","all","incl","including"}
 DIM_RE = re.compile(r"\b\d+\s*(mm|m|ft|'|\")\b|\b[hwd]\s*[:=]?\s*\d+\b|\b\d{3,4}\b")
@@ -44,7 +46,15 @@ SKIP_STATUS = ("SUPERSEDED", "BENCHMARK")
 UOM = {"nos": "nos", "no": "nos", "pc": "nos", "pcs": "nos", "unit": "nos", "units": "nos", "ea": "nos", "each": "nos", "nr": "nos",
        "set": "set", "sets": "set", "lot": "set", "fr": "fr", "ftrun": "fr", "ftr": "fr", "sqft": "sqft", "sf": "sqft", "ft2": "sqft",
        "m": "m", "lm": "m", "rm": "m", "sqm": "sqm", "m2": "sqm", "ls": "ls", "lumpsum": "ls", "ps": "ls", "point": "point", "pt": "point", "pts": "point"}
-ABBREV = {"sso": "switch socket outlet", "db": "distribution board"}
+ABBREV = {"sso": "switch socket outlet", "db": "distribution board", "foamboard": "foam board"}
+# Words that only say how big: they never make it another item (the size itself is compared apart).
+SIZE_WORDS = {"height", "high", "ht", "width", "wide", "depth", "deep", "length", "long", "thk", "thick", "thickness", "size", "approx", "max", "min"}
+# A line that takes something out AND puts something in is several works in one rate.
+REMOVE = {"dismantle", "dismantling", "demolish", "demolition", "remove", "removal", "hack", "hacking", "strip", "bongkar", "roboh", "pecah"}
+DISPOSE = re.compile(r"(\+|&|,|\b(and|dan)\b)?\s*\b(dispose|disposal|cart(ing)? away|clear(ing)? away|buang)\b", re.I)
+# What is done to the item, not what the item is: never the main word of a line.
+ACTION = REMOVE | {"relocate", "relocation", "repair", "replace", "replacement", "upgrade", "modify", "modification", "new", "existing", "extra", "additional", "provide", "make", "good"}
+JOIN = re.compile(r"\+|&|,|/|\b(and|dan|then|c/w|with)\b", re.I)
 # Words that make it a different item, not another wording of the same one.
 VARIANT = {"single", "twin", "double", "triple", "dual", "quad"}
 SIZE_RE = re.compile(r"\b[hwdl]\s?[<>]?\s?\d{2,4}\b|\b\d{3,4}\s?mm\b", re.I)
@@ -57,7 +67,7 @@ def tokens(desc):
     d = DIM_RE.sub(" ", SIZE_RE.sub(" ", str(desc).lower()))
     out = []
     for w in re.split(r"[^a-z0-9]+", d):
-        if not w or w in STOP or (len(w) == 1 and not w.isdigit()): continue      # "s&i", "c/w" leave single letters behind
+        if not w or w in STOP or w in SIZE_WORDS or (len(w) == 1 and not w.isdigit()): continue      # "s&i", "c/w" leave single letters behind
         out += ABBREV[w].split() if w in ABBREV else [w]
     return out
 
@@ -65,6 +75,26 @@ def normkey(desc): return " ".join(tokens(desc)[:8])
 def variants(desc): return {w for w in tokens(desc) if w in VARIANT or re.fullmatch(r"\d{1,2}[a-z]?", w)}
 def sizes(desc): return {re.sub(r"\s", "", m.group(0).lower()) for m in SIZE_RE.finditer(str(desc))}
 def sim(a, b): return SequenceMatcher(None, a, b).ratio()
+
+def wording(ta_list, tb_list):
+    """How alike two items read, whatever the word order: "sintered backsplash" is "backsplash, sintered"."""
+    return max(sim(" ".join(ta_list[:8]), " ".join(tb_list[:8])), sim(" ".join(sorted(set(ta_list))), " ".join(sorted(set(tb_list)))))
+
+def head_share(toks, other):
+    """How much of the line's meaning the row carries, the first words counting most (the main
+    noun: "tall unit", "sink", "wall unit"). 0..1. A row that shares only a late word ("swing door") scores low."""
+    order = [t for t in dict.fromkeys(toks) if t not in ACTION]      # each word once, in the order written; "relocate" is not what the item is
+    if not order: return 0
+    weights = [3, 2] + [1] * max(0, len(order) - 2)
+    total = sum(weights[:len(order)]) or 1
+    return sum(w for t, w in zip(order, weights) if t in other) / total
+
+def composite(desc):
+    """Several works in one rate: no single rate to compare."""
+    if "+" in desc: return True
+    words = set(re.split(r"[^a-z]+", desc.lower()))
+    rest = DISPOSE.sub(" ", desc)                       # "dismantle and dispose" is still one work
+    return bool(words & REMOVE) and bool(JOIN.search(rest.split(None, 1)[1] if len(rest.split(None, 1)) > 1 else ""))
 
 def num(v):
     return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) else None
@@ -122,16 +152,16 @@ def relate(ta, tb):
     return "differs"
 
 def best_of(toks, key, rows):
-    """The closest row: same words first, then one inside the other, then the closest wording.
-    -> (row, score, relation) or (None, 0, None)"""
-    ta, best = set(toks), (None, 0, None, -1)
+    """The closest row: same words first, then one inside the other, then the row that shares the
+    line's main words. -> (row, score, relation, share) or (None, 0, None, 0)"""
+    ta, best = set(toks), (None, 0, None, 0, -1)
     for h in rows:
-        tb = set(tokens(h["item"]))
+        tl = tokens(h["item"]); tb = set(tl)
         if not ta & tb: continue
-        rel, sc = relate(ta, tb), sim(key, normkey(h["item"]))
-        rank = {"equal": 3, "row is more specific": 2, "line is more specific": 2, "differs": 0}[rel] + sc
-        if rank > best[3]: best = (h, sc, rel, rank)
-    return best[:3]
+        rel, sc, share = relate(ta, tb), wording(toks, tl), head_share(toks, tb)
+        rank = {"equal": 3, "row is more specific": 2, "line is more specific": 2, "differs": 0}[rel] + share + sc / 100
+        if rank > best[4]: best = (h, sc, rel, share, rank)
+    return best[:4]
 
 def check(lines, hist, basis, band):
     flags, matches, possible, skipped, gaps, devs = [], [], [], [], [], []
@@ -140,36 +170,39 @@ def check(lines, hist, basis, band):
         desc, unit = str(l["desc"]), uom(l.get("unit"))
         toks, key = tokens(desc), normkey(desc)
         base = {"row": l["row"], "desc": desc[:120], "unit": l.get("unit"), "rate": l["rate"], "basis": basis}
-        if unit == "ls" or "+" in desc:
+        if unit == "ls" or composite(desc):
             skipped.append({**base, "why": "lump sum" if unit == "ls" else "composite line (several works in one rate)"}); continue
-        def maybe(h, score, why):
-            possible.append({**base, "why": why, "ratebase": {"id": h["id"], "item": h["item"][:80], "uom": h["uom_raw"], "status": h["status"], "score": round(score, 2)}})
+        def maybe(h, score, why, pool=()):
+            also = [x["id"] for x in pool if x["id"] != h["id"]][:4]
+            possible.append({**base, "why": why, "ratebase": {"id": h["id"], "item": h["item"][:80], "uom": h["uom_raw"], "status": h["status"], "score": round(score, 2), **({"also": also} if also else {})}})
         same_unit = [h for h in hist if h["basis"] == basis and h["uom"] == unit]
-        best, score, rel = best_of(toks, key, same_unit)
+        family = lambda h: [x for x in same_unit if set(tokens(x["item"])) == set(tokens(h["item"]))]      # the same item at other sizes
+        best, score, rel, share = best_of(toks, key, same_unit)
         sure = best and rel != "differs" and (score >= MATCH or rel == "equal")
         if not sure:
             # nothing certain in this unit and basis. Close wording here? The same item in another unit, or as a cost rate only?
-            other, s2, r2 = best_of(toks, key, [h for h in hist if h["basis"] == basis and h["uom"] != unit])
-            cost, s3, r3 = best_of(toks, key, [h for h in hist if h["basis"] != basis and h["uom"] == unit])
-            if best and rel != "differs": maybe(best, score, f"the {rel}: confirm the spec matches")
-            elif best and score >= NEAR:
+            other, s2, r2, h2 = best_of(toks, key, [h for h in hist if h["basis"] == basis and h["uom"] != unit])
+            cost, s3, r3, h3 = best_of(toks, key, [h for h in hist if h["basis"] != basis and h["uom"] == unit])
+            if best and rel != "differs": maybe(best, score, f"the {rel}: confirm the spec matches", family(best))
+            elif best and (share >= 0.45 or (score >= NEAR and share >= 0.3)):
                 odd = sorted((set(toks) ^ set(tokens(best["item"]))))[:4]
-                maybe(best, score, f"close wording, different words ({' / '.join(odd)}): confirm it is the same item")
-            elif other and r2 != "differs" and (s2 >= NEAR or r2 == "equal"): maybe(other, s2, f"the ratebase holds it in another unit ({other['uom_raw'] or '?'}): not comparable as it is")
+                maybe(best, score, f"same main words, different words ({' / '.join(odd)}): confirm it is the same item" + (", and its size" if sizes(best["item"]) else ""), family(best))
+            elif other and (r2 != "differs" or h2 >= 0.6) and (s2 >= NEAR or r2 == "equal" or h2 >= 0.6): maybe(other, s2, f"the ratebase holds it in another unit ({other['uom_raw'] or '?'}): not comparable as it is")
             elif cost and r3 != "differs" and (s3 >= NEAR or r3 == "equal"): maybe(cost, s3, f"the ratebase holds a {cost['basis']} rate only for this item")
-            else: gaps.append({**base, "near": ({"id": best["id"], "item": best["item"][:60], "score": round(score, 2)} if best and score >= 0.5 else None)})
+            else: gaps.append({**base, "near": ({"id": best["id"], "item": best["item"][:60], "score": round(score, 2)} if best and share >= 0.4 else None)})
             continue
         # the words agree. Is it really the same thing?
         if variants(desc) != variants(best["item"]):
             # another row may be the right variant (a single, when the closest row is a twin)
             exact = [(h, sim(key, normkey(h["item"]))) for h in same_unit
-                     if variants(h["item"]) == variants(desc) and relate(set(toks), set(tokens(h["item"]))) != "differs" and set(toks) & set(tokens(h["item"]))]
+                     if variants(h["item"]) == variants(desc) and relate(set(toks), set(tokens(h["item"]))) != "differs" and set(toks) & set(tokens(h["item"]))
+                     and wording(toks, tokens(h["item"])) >= MATCH]
             if not exact:
                 maybe(best, score, f"another variant ({', '.join(sorted(variants(desc) ^ variants(best['item'])))}): not the same item"); continue
             best, score = max(exact, key=lambda x: x[1])
         if best["supplier_row"]: maybe(best, score, "a supplier price-list row (a component): confirm before comparing with a finished item"); continue
         if sizes(best["item"]) and sizes(best["item"]) != sizes(desc):
-            maybe(best, score, "size-dependent rate: " + ("the line gives no size" if not sizes(desc) else "sizes differ, pro-rata first (bif_prorata.py)")); continue
+            maybe(best, score, "size-dependent rate: " + ("the line gives no size" if not sizes(desc) else "sizes differ, pro-rata first (bif_prorata.py)"), family(best)); continue
         # compare with rows that are the same item in the same variant, never a mix
         pool_all = [h for h in same_unit if set(tokens(h["item"])) == set(tokens(best["item"])) and not h["supplier_row"] and sizes(h["item"]) == sizes(best["item"])]
         verified = [h for h in pool_all if h["status"] == "VERIFIED"]
